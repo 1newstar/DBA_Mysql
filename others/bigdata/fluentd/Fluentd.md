@@ -1,4 +1,4 @@
-# ![Logo](pic\00.png) 简介与安装
+# ![Logo](pic/00.png) 简介与安装
 
 > 2018-05-16 BoobooWei
 
@@ -136,7 +136,7 @@ root@redis-01:~# curl -L https://toolbelt.treasuredata.com/sh/install-ubuntu-tru
 
 
 
-![1526457281102](pic\01.png)
+![1526457281102](pic/01.png)
 
 查询安装路径
 
@@ -144,9 +144,9 @@ root@redis-01:~# curl -L https://toolbelt.treasuredata.com/sh/install-ubuntu-tru
 root@redis-01:~# dpkg -L td-agent
 ```
 
-![1526458848402](C:\Users\rgwei\AppData\Local\Temp\1526458848402.png)
+![1526458848402](pic/07)
 
-![1526458879421](C:\Users\rgwei\AppData\Local\Temp\1526458879421.png)
+![1526458879421](pic/08.png)
 
 ### 启动Fluentd的守护进程 
 
@@ -360,7 +360,7 @@ event.Event('zyadmin', {
 
 ```
 
-![1526461417615](C:\Users\rgwei\AppData\Local\Temp\1526461417615.png)
+![1526461417615](pic/09.png)
 
 ## 高可用配置
 
