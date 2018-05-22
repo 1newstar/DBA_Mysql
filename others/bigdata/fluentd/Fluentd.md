@@ -40,7 +40,7 @@ Heroku的联合创始人Adam Wiggins说的挺有道理：
 
 ![img](https://docs.fluentd.org/images/fluentd-architecture.png) 
 
-##How？
+## How？
 
 [官方帮助文档]https://docs.fluentd.org/v1.0/articles/quickstart
 
@@ -50,7 +50,7 @@ Heroku的联合创始人Adam Wiggins说的挺有道理：
 > 2. 增加文件句柄数
 > 3. 优化网络内核配置参数
 
-####1 设置NTP时间同步服务
+#### 1 设置NTP时间同步服务
 
 `ntpd `，以d结尾，是一个守护进程，全称是Network Time Protocol (NTP) daemon，它通过与一个Internet标准时钟服务器同步来维护系统时钟，同时也可以将本机做为一个时钟服务器对外提供时钟同步服务。更多信息请man一下`ntpd`。
 
@@ -70,7 +70,7 @@ $ pgrep ntpd
 
 
 
-####2 增加文件句柄数
+#### 2 增加文件句柄数
 
 增加系统文件描述符的最大数量
 
@@ -91,7 +91,7 @@ root hard nofile 65536
 
 之后用ulimit查看，应该是65536了。
 
-####3 优化网络内核配置参数
+#### 3 优化网络内核配置参数
 
 (Optional)优化机器内核TCP/IP参数
 
@@ -380,7 +380,7 @@ event.Event('zyadmin', {
 | 日志整合服务器A log aggregators | 192.168.1.6 | 汇总搜集来的日志并输出   |
 | 日志整合服务器B log aggregators | 192.168.1.7 | backup                   |
 
-###搭建明细
+### 搭建明细
 
 ```shell
 # 安装是一样的，重点看配置
