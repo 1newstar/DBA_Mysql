@@ -2,7 +2,11 @@
 
 > 2017-08-18 BoobooWei
 >
-> 今天有客户(MySQL 5.6)遇到该问题，最关键的是属于第三种情况，google上根本找不到类似的故障案例，唯一一个非常接近的故障案例中数据库版本却不同（具体看下文慢慢聊），哎，困难重重啊，最终还是解决了哈。
+> MySQL 5.6遇到该问题，最关键的是属非常特殊的情况，google上根本找不到类似的故障案例，唯一一个非常接近的故障案例中数据库版本却不同（5.7），最终解决了，将所有的情况都梳理了以下，并写了一个MDL故障自愈脚本
+
+[TOC]
+
+
 
 alter table的语句是很危险的，在操作之前最好确认对要操作的表没有任何进行中的操作、没有未提交事务、也没有显式事务中的报错语句。如果有alter table的维护任务，在无人监管的时候运行，最好通过lock_wait_timeout设置好超时时间，避免长时间的metedata锁等待。
 
@@ -55,6 +59,34 @@ mysql> show processlist;
 # id=10的线程为会话D 显示查询事务同样进入等待
 ```
 
+解决方法
+
+```shell
+# 查看metadatalock
+
+## 第一种情况，则定位到长时间未提交的事务kill即可
+
+# 查询 information_schema.innodb_trx 看到有长时间未完成的事务， 使用 kill 命令终止该查询。
+
+select concat('kill ',i.trx_mysql_thread_id,';') from information_schema.innodb_trx i,
+  (select 
+         id, time
+     from
+         information_schema.processlist
+     where
+         time = (select 
+                 max(time)
+             from
+                 information_schema.processlist
+             where
+                 state = 'Waiting for table metadata lock'
+                     and substring(info, 1, 5) in ('alter' , 'optim', 'repai', 'lock ', 'drop ', 'creat'))) p
+  where timestampdiff(second, i.trx_started, now()) > p.time
+  and i.trx_mysql_thread_id  not in (connection_id(),p.id);
+```
+
+
+
 ### 场景2
 
 * 通过`show processlist`看不到booboo上有任何操作，但实际上存在有未提交的事务，可以在`information_schema.innodb_trx`中查看到。在事务没有完成之前，booboo的锁不会释放，alter table同样获取不到metadata的独占锁
@@ -64,6 +96,19 @@ mysql> show processlist;
 # 在场景1的基础上，将会话A的事务完成或者kill掉，会话C执行成功，但是会话B和会话D继续进入metadata锁的等待。原因是会话D虽然select可以执行，但是事务没有提交，则表上的metadata锁还存在，导致会话B的ddl操作无法执行。
 # 会话B和会话D，情况1：知道有未完成的事务D，则结束会话D的事务，会话B正常执行。
 # 会话B和会话D，情况2：不知道有未结束的事务D，如何排错呢？
+=================================
+
+-- 请根据具体的情景修改查询语句
+-- 如果导致阻塞的语句的用户与当前用户不同，请使用导致阻塞的语句的用户登录来终止会话
+
+## 场景2的情况，是在场景1的基础上，还是有metadatalock锁（*一般生产环境不会停服务，因此不停的有新的query发送过来，就会出现场景2*），则手动继续kill掉长事务即可，注意生产环境中，有可能ddl操作需要保留（*例如MDL锁出现在主从同步的从中，从库需要去执行主发送的表变更，当然，也可以先将主从停掉，手动执行alter操作，都可以*）以下方法是在停止对从库的读操作后，将非ddl的连接kill掉
+
+select id,State,command from information_schema.processlist where State="Waiting for table metadata lock";
+select  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id,USER,DB,COMMAND,STATE,trx_state,trx_query from information_schema.processlist,information_schema.innodb_trx  where trx_mysql_thread_id=id;
+show processlist;
+select  concat('kill ',trx_mysql_thread_id,';') from information_schema.processlist,information_schema.innodb_trx  where trx_mysql_thread_id=id and State!="Waiting for table metadata lock";
+
+===============================
 mysql> show processlist;                                                                                                             
 +----+------+-----------+-----------+---------+------+---------------------------------+-----------------------------------------+
 | Id | User | Host      | db        | Command | Time | State                           | Info                                    |
@@ -77,7 +122,7 @@ mysql> show processlist;
 5 rows in set (0.00 sec)
 # 查看当前进程发现除了Alter之外没有对booboo表的操作
 
-mysql> melect  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id,USER,DB,COMMAND,STATE,trx_state,trx_query from information_schema.processlist,information_schema.innodb_trx where trx_mysql_thread_id=id;
+mysql> select  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id,USER,DB,COMMAND,STATE,trx_state,trx_query from information_schema.processlist,information_schema.innodb_trx where trx_mysql_thread_id=id;
 +----------+---------------------+---------------------+----+------+-----------+---------+---------------------------------+-----------+-----------------------------------------+
 | timediff | sysdate()           | trx_started         | id | USER | DB        | COMMAND | STATE                           | trx_state | trx_query                               |
 +----------+---------------------+---------------------+----+------+-----------+---------+---------------------------------+-----------+-----------------------------------------+
@@ -92,6 +137,11 @@ mysql> melect  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id
 
 ### 场景3
 
+> 与场景2对比的现象不同于：
+>
+> * 场景2：未完成事务中存在未完成事务
+> * 场景3：未完成事务中不存在未完成事务：确认有错误事务未提交或回滚，找到该事务的session_id然后杀死
+
 - 通过`show processlist`看不到`booboo`表有任何操作，在`information_schema.innodb_trx`中也没有任何进行中的事务。
 - 这很可能是因为在一个显式的事务中，对`booboo`表进行了一个失败的操作（比如查询了一个不存在的字段），这时事务没有开始，但是失败语句获取到的锁依然有效。从`performance_schema.events_statements_current`表中可以查到失败的语句
 - 也就是说除了语法错误，其他错误语句获取到的锁在这个事务提交或回滚之前，仍然不会释放掉。`because the failed statement is written to the binary log and the locks protect log consistency `但是解释这一行为的原因很难理解，因为错误的语句根本不会被记录到二进制日志
@@ -103,7 +153,92 @@ mysql> melect  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id
 ## 第一反应就是有可能是场景1，于是kill掉执行select的线程，再次查看线程情况，就只剩下执行alter线程了
 ## 接下来查看未完成的事务，如果是场景1，在kill掉冲突的线程后应该出现两种情况（A.alter操作正常执行B.线程中只有alter操作为waiting metadata lock状态；未完成事务中存在未完成事务）
 ## 但是却发现和B情况有所不同的是：未完成事务中不存在未完成事务，总结第三种情况(C.线程中只有alter操作为waiting metadata lock状态；未完成事务中不存在未完成事务）
-# 通过搜索资料定位到是场景3，可以没有说怎么解决问题，又不能重新启动服务器，只有一个资料里提到了方法（确认有错误事务未提交或回滚，找到该事务的sessionid然后杀死，关键就是如何找到sessionid呢？performance_schema.events_statements_current中的thread_id为线程id并不是sessionid或者说会话id、连接id，如何通过thread_id找到session_id成为了难点？5.7中有个session表可以直接查到，而5.6中必须通过三表才能查到，分别为performance_schema.events_statements_current,performance_schema.threads,information_schema.processlist表。）
+# 通过搜索资料定位到是场景3，但资料中没有说怎么解决问题，又不能重新启动服务器，只有一个资料里提到了方法（确认有错误事务未提交或回滚，找到该事务的sessionid然后杀死，关键就是如何找到sessionid呢？performance_schema.events_statements_current中的thread_id为线程id并不是sessionid或者说会话id、连接id，如何通过thread_id找到session_id成为了难点？5.7中有个session表可以直接查到，而5.6中必须通过三表才能查到，分别为performance_schema.events_statements_current,performance_schema.threads,information_schema.processlist表。）
+=====================================================================================
+# kill掉除了写操作以外的query
+select concat('kill ',id) from information_schema.processlist where State="Waiting for table metadata lock" and substring(info, 1, 5) not in ('alter' , 'optim', 'repai', 'lock ', 'drop ', 'creat');
+
+# 寻找未提交或未回滚的错误事务，并kill即可
+select t.processlist_id,t.processlist_time,e.sql_text from performance_schema.threads t,performance_schema.events_statements_current e where t.thread_id=e.thread_id and e.SQL_TEXT like '%t1%';
+# 案例中假设是在t1表上有MDL锁，则，e.sql_text 近似匹配t1
+# 本方法5.5 5.6 5.7 都通用。
+=============================================================================
+```
+
+第一步：模拟第三种情况，会话11执行一个显示事务，且query出现列错误，t1表中不存在xx列，不提交。
+
+![](pic/mdl01.png)
+
+第二步：会话14中执行alter操作
+
+![mdl02](pic/mdl02.png)
+
+第三步：执行一条query
+
+![mdl03](pic/mdl03.png)
+
+第四步：会话15执行一个显示事务，查询t1表
+
+![mdl04](pic/mdl04.png)
+
+第五步：查看当前的processlist情况，可以看到只要是对t1表的操作都出现了MDL锁等待；尝试通过第一种情况的解决方法找出阻塞的事务会话进行kill，发现不存在阻塞会话；查看当前未提交的事务发现返回空；通过过滤processlist中进行MDL锁等待且不是alter的会话id，进行kill。
+
+![mdl06](pic/mdl06.png)
+
+第六步：只kill 12，15，留下执行alter的会话14；有人会想为什么都kill掉呢？因为即使现在kill掉了，t1表的MDL锁也不会释放掉，还不如留下会话14的ddl操作，等彻底解决了，自然就能执行这个操作。具体可以看下面的分析。
+
+![mdl07](pic/mdl07.png)
+
+![mdl08](pic/mdl08.png)
+
+![mdl09](pic/mdl09.png)
+
+第七步：给大家做个测试，即使将会话14的alter动作kill掉：
+
+* processlist中看不到任何等待MDL锁的会话；
+* sys.schema_table_lock_waits中也不存在表锁（5.7才有sys库）；
+* performance_schema.metadata_locks中也不存在任何锁记录；
+* 会话16想再去执行alter操作，又开始了MDL锁等待。
+
+![mdl10](pic/mdl10.png)
+
+![mdl11](pic/mdl11.png)
+
+第八步：此时就一定可以确定当前属于【**有错误事务未提交或回滚导致的MDL锁**】的情况了。我们找出这个错误事务，进行kill
+
+![mdl12](pic/mdl12.png)
+
+第九步：kill掉会话11后，成功将MDL锁释放。
+
+> 有人又会问咯：为什么不将数据库重启？
+>
+> 回答：
+>
+> 如果说——
+>
+> 1. 业务允许重启
+>
+> 2. 不想找到问题的根源
+>
+>    那么重启吧
+>
+> 如果说—— 
+>
+> 1.  数据库上面多个库，关联多个业务，不能重启
+>
+> 2. 想找到问题的根源，防止下次再次出现类似的问题
+>
+>    那么你懂的
+>
+> 那么为什么不直接kill所有会话呢？同样如果你要找出问题的根源那么就排查，不想问为什么就直接kill吧，末尾有kill的脚本
+
+![mdl13](pic/mdl13.png)
+
+
+
+一步步分析如下：
+
+```shell
 mysql> show processlist;                                                                                                                                                                   
 +----+------+-----------+-----------+---------+------+---------------------------------+-----------------------------------------+
 | Id | User | Host      | db        | Command | Time | State                           | Info                                    |
@@ -323,6 +458,8 @@ Query OK, 0 rows affected (9 min 54.35 sec)
 Records: 0  Duplicates: 0  Warnings: 0
 ```
 
+
+
 ## 小知识点总结
 
 ### 三张表的关系
@@ -349,7 +486,9 @@ Records: 0  Duplicates: 0  Warnings: 0
 
 [官方关于processlist表的说明](https://dev.mysql.com/doc/refman/5.7/en/show-processlist.html)
 
-[MySQL MetaData Lock 案例分享](http://www.w2bc.com/article/258987)
+[MySQL5.7 MetaData Lock 案例分享](http://www.voidcn.com/article/p-hjsjvnlz-bog.html)
+
+
 
 ### 不同版本
 
@@ -430,3 +569,73 @@ mysql> select * from information_schema.processlist;
 +------+------+-----------+------+---------+------+-----------+----------------------------------------------+
 1 row in set (0.00 sec)
 ```
+## MDL故障自愈
+
+### kill所有会话
+
+> 不想知道故障原因，只想快速解决故障
+
+```shell
+#!/bin/bash
+# kill掉 所有会话
+user=xxx
+password=xxx
+host=xxxx.mysql.rds.aliyuncs.com
+port=3306
+
+mysql -u$user -p$password -h$host  -P$port -e "select  concat('KILL ',id,';') from information_schema.processlist;" > tmpfile
+
+awk '{if (NR != 1) print $0 }' tmpfile | mysql -u$user -p$password -h$host  -P$port
+```
+
+### MDL故障排查和解决
+
+```shel
+#!/bin/bash
+# Usage: bash xxx.sh
+# 2017-08-21 Booboo Wei
+
+user=root
+password=xxx
+host=xxx
+port=3306
+
+# 查看有metalock锁的线程
+# 查看未提交的事务运行时间，线程id，用户等信息
+# 查看未提交的事务运行时间，线程id，用户，sql语句等信息
+# 查看错误语句
+# 根据错误语句的THREAD_ID，查看PROCESSLIST_ID
+
+sql0="
+show processlist"
+sql1="
+select id,State,command,info from information_schema.processlist where State='Waiting for table metadata lock';"
+sql2="
+select  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id,USER,DB,COMMAND,STATE,trx_state,trx_query from information_schema.processlist,information_schema.innodb_trx  where trx_mysql_thread_id=id;"
+sql3="
+select  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id,USER,DB,COMMAND,STATE,trx_state from information_schema.processlist,information_schema.innodb_trx where trx_mysql_thread_id=id\G;"
+sql4="
+select thread_id,sql_text from performance_schema.events_statements_current where SQL_TEXT regexp 't1'\G;"
+
+
+
+read -p '当前等待metadatalock的连接：（回车）' x
+echo $sql0 | mysql -u$user -p$password -h$host  -P$port 
+read -p '当前等待metadatalock的连接：（回车）' a
+echo $sql1 | mysql -u$user -p$password -h$host  -P$port  
+read -p "查看未提交的事务运行时间，线程id，用户等信息（回车）" b
+echo $sql2 | mysql -u$user -p$password -h$host  -P$port
+read -p '查看未提交的事务运行时间，线程id，用户，sql语句等信息（回车）' c
+echo $sql3 | mysql -u$user -p$password -h$host  -P$port
+read -p '查看错误语句（回车）' d
+echo $sql4 | mysql -u$user -p$password -h$host  -P$port
+read -p '根据错误语句thread_id定位到session会话或连接id:（输入thread_id）' tid
+sql5="
+select processlist_id from performance_schema.threads where thread_id=${tid};"
+echo $sql5 | mysql -u$user -p$password -h$host  -P$port
+read -p '错误语句会话id:(输入session_id)' sid
+sql6="
+select p.* from information_schema.processlist p where id=${sid}\G;"
+echo $sql6 | mysql -u$user -p$password -h$host  -P$port
+```
+
