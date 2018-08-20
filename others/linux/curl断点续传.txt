@@ -1,0 +1,15 @@
+root@joowing-server-07:/offline# curl --limit-rate 8M -o hins4764419_data_20180804072706.tar.gz "http://rdsbak-shanghai-v2.oss-cn-shanghai-internal.aliyuncs.com/custins6151273/hins4764419_data_20180804072706.tar.gz?OSSAccessKeyId=LTAIyKzxtSYNknVO&Expires=1533605580&Signature=rRAg54bPaGYt%2BqMOPbkMLnPIdnM%3D"
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+ 87 29.8G   87 26.0G    0     0  8191k      0  1:03:44  0:55:33  0:08:11 8192k
+Socket error Event: 32 Error: 10053.
+
+# 断点续传
+root@joowing-server-07:/offline# curl --limit-rate 8M  -o hins4764419_data_20180804072706.tar.gz -C - "http://rdsbak-shanghai-v2.oss-cn-shanghai-internal.aliyuncs.com/custins6151273/hins4764419_data_20180804072706.tar.gz?OSSAccessKeyId=LTAIyKzxtSYNknVO&Expires=1533605580&Signature=rRAg54bPaGYt%2BqMOPbkMLnPIdnM%3D"
+** Resuming transfer from byte position 32085969867
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0 29.8G    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+
+root@joowing-server-07:/offline# ll -h hins4764419_data_20180804072706.tar.gz 
+-rw-r--r-- 1 root root 30G 8月   6 10:39 hins4764419_data_20180804072706.tar.gz
