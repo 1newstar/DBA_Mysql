@@ -590,52 +590,5 @@ awk '{if (NR != 1) print $0 }' tmpfile | mysql -u$user -p$password -h$host  -P$p
 
 ### MDL故障排查和解决
 
-```shel
-#!/bin/bash
-# Usage: bash xxx.sh
-# 2017-08-21 Booboo Wei
-
-user=root
-password=xxx
-host=xxx
-port=3306
-
-# 查看有metalock锁的线程
-# 查看未提交的事务运行时间，线程id，用户等信息
-# 查看未提交的事务运行时间，线程id，用户，sql语句等信息
-# 查看错误语句
-# 根据错误语句的THREAD_ID，查看PROCESSLIST_ID
-
-sql0="
-show processlist"
-sql1="
-select id,State,command,info from information_schema.processlist where State='Waiting for table metadata lock';"
-sql2="
-select  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id,USER,DB,COMMAND,STATE,trx_state,trx_query from information_schema.processlist,information_schema.innodb_trx  where trx_mysql_thread_id=id;"
-sql3="
-select  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id,USER,DB,COMMAND,STATE,trx_state from information_schema.processlist,information_schema.innodb_trx where trx_mysql_thread_id=id\G;"
-sql4="
-select thread_id,sql_text from performance_schema.events_statements_current where SQL_TEXT regexp 't1'\G;"
-
-
-
-read -p '当前等待metadatalock的连接：（回车）' x
-echo $sql0 | mysql -u$user -p$password -h$host  -P$port 
-read -p '当前等待metadatalock的连接：（回车）' a
-echo $sql1 | mysql -u$user -p$password -h$host  -P$port  
-read -p "查看未提交的事务运行时间，线程id，用户等信息（回车）" b
-echo $sql2 | mysql -u$user -p$password -h$host  -P$port
-read -p '查看未提交的事务运行时间，线程id，用户，sql语句等信息（回车）' c
-echo $sql3 | mysql -u$user -p$password -h$host  -P$port
-read -p '查看错误语句（回车）' d
-echo $sql4 | mysql -u$user -p$password -h$host  -P$port
-read -p '根据错误语句thread_id定位到session会话或连接id:（输入thread_id）' tid
-sql5="
-select processlist_id from performance_schema.threads where thread_id=${tid};"
-echo $sql5 | mysql -u$user -p$password -h$host  -P$port
-read -p '错误语句会话id:(输入session_id)' sid
-sql6="
-select p.* from information_schema.processlist p where id=${sid}\G;"
-echo $sql6 | mysql -u$user -p$password -h$host  -P$port
-```
+[MDL故障自愈脚本GitHub地址](https://github.com/BoobooWei/DevOps-Database-Troubleshooting/blob/master/fault_self_healing_metadatalock.py)
 

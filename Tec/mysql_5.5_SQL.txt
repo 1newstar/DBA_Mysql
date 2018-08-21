@@ -800,8 +800,9 @@ order by 与 limit 查询{
 }
 
 存储过程{
-	
-	
+	 select `name` from mysql.proc where db = 'xx' and `type` = 'PROCEDURE'   #存储过程
+
+	show procedure status; //库中查看存储过程
 }
 
 索引与优化{
