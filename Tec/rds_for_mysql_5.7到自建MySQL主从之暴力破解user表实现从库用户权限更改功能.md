@@ -1,8 +1,8 @@
-# RDS For MySQL 5.7 到自建MySQL 5.7 主从复制之从库权限问题的解法
+# RDS For MySQL 5.7到自建MySQL主从之暴力破解user表实现从库用户权限更改功能
 
 > 2018-08-14 大宝
 
-[toc]
+[TOC]
 
 # 故事背景
 
@@ -10,7 +10,7 @@
 
 说在前面：
 
-* 云上数据库： RDS For MySQL 5.7 普通用户权限
+* 云上数据库： RDS For MySQL 5.7.20 普通用户权限
 * IDC数据库: MySQL 5.7.20 
 
 ## 故事情节
@@ -21,7 +21,7 @@
 
 #### 故障原因
 
-- RDS For MySQL 5.7 到自建MySQL 5.7.17 主从同步异常的原因为RDS与MySQL官方版本使用的系统库不同
+- RDS For MySQL 5.7.20 到自建MySQL 5.7.20主从同步异常的原因为RDS与MySQL官方版本使用的系统库不同
 - 自建MySQL 5.7.20 无法同步主库RDS的系统表
 - 自建MySQL 5.7.20 恢复RDS的全备份数据后无法执行授权语句,报错如下：
 
@@ -43,7 +43,7 @@ ERROR 1064 (42000): Unknown trigger has an error in its body: 'Unknown system va
 
 ### 从库添加认证授权失败
 
-RDS For MySQL 5.7 到自建MySQL 5.7.20 搭建主从同步架构:
+RDS For MySQL 5.7.20 到自建MySQL 5.7.20 搭建主从同步架构:
 
 - 配置从库不同步RDS主库的系统表
 
@@ -92,8 +92,22 @@ RDS For MySQL 5.7的备份文件 到线下自建MYSQL 8.0.11 无法恢复数据�
 
 该方法同样无法解决。
 
-
 ## 解决方案
+
+### 思路
+
+```shell
+# 权限相关的一些表：
+SCHEMA_PRIVILEGES：提供了数据库的相关权限，这个表是内存表是从mysql.db中拉去出来的。
+TABLE_PRIVILEGES:提供的是表权限相关信息，信息是从 mysql.tables_priv 表中加载的
+COLUMN_PRIVILEGES ：这个表可以清楚就能看到表授权的用户的对象，那张表那个库以及授予的是什么权限，如果授权的时候加上with grant option的话，我们可以看得到PRIVILEGE_TYPE这个值必须是YES。
+USER_PRIVILEGES:提供的是表权限相关信息，信息是从 mysql.user 表中加载的
+通过表我们可以很清晰看得到MySQL授权的层次，SCHEMA，TABLE，COLUMN级别，当然这些都是基于用户来授予的
+```
+
+从数据库用户权限管理的原理可以了解到管理用户的是`user`表，如果要更细致的权限还需要`db`表和`tables_priv`表。*（本文只从user表着手）*
+
+### 步骤概览
 
 1. 创建新的user_1表
 2. 对user_1表添加新的用户
@@ -102,8 +116,8 @@ RDS For MySQL 5.7的备份文件 到线下自建MYSQL 8.0.11 无法恢复数据�
 5. 启动该服务
 6. 可以通过update、insert、delete操作user表来添加权限（grant无法操作）
 
+### 测试环境
 
-## 操作明细
 ```shell
 root@MySQL-01 10:35:  [mysql]> create table user_1 like user;
 Query OK, 0 rows affected (0.01 sec)
@@ -252,3 +266,357 @@ aliyun_root@MySQL-01 11:51:  [mysql]> select user,host from  mysql.user;
 4 rows in set (0.00 sec)
 
 ```
+
+# 
+
+> 2018-08-14 大宝
+
+[TOC]
+
+### 生产环境
+
+#### 用户权限
+
+目标：IDC机房从库支持通过insert、update、delete命令来修改用户权限，权限比较简单，分为只读和写。
+
+需要设置以下权限：权限作用于所有的库多有的表
+
+| 用户名     | 密码 | 权限 |
+| :--------- | :--- | :--- |
+| root       | 123  | 读写 |
+| joowingbuz | 123  | 只读 |
+| ottersync  | 123  | 只读 |
+| syncdw     | 123  | 只读 |
+| datasis    | 123  | 只读 |
+| joowingv   | 123  | 只读 |
+| datadev    | 123  | 只读 |
+| readonly   | 123  | 只读 |
+
+#### 步骤概览
+
+```shell
+# 1. 登陆数据库后操作如下：
+use mysql;
+create table user_1 like user;
+insert into user_1 select * from user;
+delete from mysql.user_1 where user='root';
+insert into mysql.user_1 values ('%','root', '', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+insert into mysql.user_1 values ('%','joowingbuz', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+insert into mysql.user_1 values ('%','ottersync', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+insert into mysql.user_1 values ('%','syncdw', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+insert into mysql.user_1 values ('%','datasis', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+insert into mysql.user_1 values ('%','joowingv', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+insert into mysql.user_1 values ('%','datadev', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+insert into mysql.user_1 values ('%','readonly', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+# 2. 退出数据库并停止服务
+/data/mysql/support-files/mysql.server stop
+# 3. 将user_1表的物理文件覆盖user表
+cd /data/xtrabackup_data/mysql/
+mv user.frm user.ibd user.MYD user.MYI user.TRG /tmp
+mv user_1.frm user.frm
+mv user_1.MYI user.MYI
+mv user_1.MYD user.MYD
+# 4. 启动数据库
+/data/mysql/support-files/mysql.server start
+```
+
+#### 操作明细
+
+```shell
+root@MySQL-01 15:42:  [(none)]> use mysql
+Database changed
+root@MySQL-01 15:42:  [mysql]> create table user_1 like user;
+Query OK, 0 rows affected (0.01 sec)
+
+root@MySQL-01 15:42:  [mysql]> insert into user_1 select * from user;
+Query OK, 3 rows affected (0.00 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+root@MySQL-01 15:42:  [mysql]> select user,host,authentication_string from mysql.user;
++------+-----------+-------------------------------------------+
+| user | host      | authentication_string                     |
++------+-----------+-------------------------------------------+
+| root | localhost | *D4DF57DFB7019B3D8C4294CC413AF1D650A275E4 |
+| root | 127.0.0.1 | *D4DF57DFB7019B3D8C4294CC413AF1D650A275E4 |
+| root | ::1       | *D4DF57DFB7019B3D8C4294CC413AF1D650A275E4 |
++------+-----------+-------------------------------------------+
+3 rows in set (0.00 sec)
+
+root@MySQL-01 15:42:  [mysql]> select user,host,authentication_string from mysql.user_1;
++------+-----------+-------------------------------------------+
+| user | host      | authentication_string                     |
++------+-----------+-------------------------------------------+
+| root | localhost | *D4DF57DFB7019B3D8C4294CC413AF1D650A275E4 |
+| root | 127.0.0.1 | *D4DF57DFB7019B3D8C4294CC413AF1D650A275E4 |
+| root | ::1       | *D4DF57DFB7019B3D8C4294CC413AF1D650A275E4 |
++------+-----------+-------------------------------------------+
+3 rows in set (0.00 sec)
+
+root@MySQL-01 15:42:  [mysql]> desc mysql.user_1;
++------------------------+-----------------------------------+------+-----+---------+-------+
+| Field                  | Type                              | Null | Key | Default | Extra |
++------------------------+-----------------------------------+------+-----+---------+-------+
+| Host                   | char(60)                          | NO   | PRI |         |       |
+| User                   | char(16)                          | NO   | PRI |         |       |
+| Password               | char(41)                          | NO   |     |         |       |
+| Select_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Insert_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Update_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Delete_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Create_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Drop_priv              | enum('N','Y')                     | NO   |     | N       |       |
+| Reload_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Shutdown_priv          | enum('N','Y')                     | NO   |     | N       |       |
+| Process_priv           | enum('N','Y')                     | NO   |     | N       |       |
+| File_priv              | enum('N','Y')                     | NO   |     | N       |       |
+| Grant_priv             | enum('N','Y')                     | NO   |     | N       |       |
+| References_priv        | enum('N','Y')                     | NO   |     | N       |       |
+| Index_priv             | enum('N','Y')                     | NO   |     | N       |       |
+| Alter_priv             | enum('N','Y')                     | NO   |     | N       |       |
+| Show_db_priv           | enum('N','Y')                     | NO   |     | N       |       |
+| Super_priv             | enum('N','Y')                     | NO   |     | N       |       |
+| Create_tmp_table_priv  | enum('N','Y')                     | NO   |     | N       |       |
+| Lock_tables_priv       | enum('N','Y')                     | NO   |     | N       |       |
+| Execute_priv           | enum('N','Y')                     | NO   |     | N       |       |
+| Repl_slave_priv        | enum('N','Y')                     | NO   |     | N       |       |
+| Repl_client_priv       | enum('N','Y')                     | NO   |     | N       |       |
+| Create_view_priv       | enum('N','Y')                     | NO   |     | N       |       |
+| Show_view_priv         | enum('N','Y')                     | NO   |     | N       |       |
+| Create_routine_priv    | enum('N','Y')                     | NO   |     | N       |       |
+| Alter_routine_priv     | enum('N','Y')                     | NO   |     | N       |       |
+| Create_user_priv       | enum('N','Y')                     | NO   |     | N       |       |
+| Event_priv             | enum('N','Y')                     | NO   |     | N       |       |
+| Trigger_priv           | enum('N','Y')                     | NO   |     | N       |       |
+| Create_tablespace_priv | enum('N','Y')                     | NO   |     | N       |       |
+| ssl_type               | enum('','ANY','X509','SPECIFIED') | NO   |     |         |       |
+| ssl_cipher             | blob                              | NO   |     | NULL    |       |
+| x509_issuer            | blob                              | NO   |     | NULL    |       |
+| x509_subject           | blob                              | NO   |     | NULL    |       |
+| max_questions          | int(11) unsigned                  | NO   |     | 0       |       |
+| max_updates            | int(11) unsigned                  | NO   |     | 0       |       |
+| max_connections        | int(11) unsigned                  | NO   |     | 0       |       |
+| max_user_connections   | int(11) unsigned                  | NO   |     | 0       |       |
+| plugin                 | char(64)                          | YES  |     |         |       |
+| authentication_string  | text                              | YES  |     | NULL    |       |
++------------------------+-----------------------------------+------+-----+---------+-------+
+42 rows in set (0.00 sec)
+
+root@MySQL-01 15:47:  [mysql]> delete from mysql.user_1 where user='root';
+Query OK, 3 rows affected (0.00 sec)
+
+root@MySQL-01 15:51:  [mysql]> insert into mysql.user_1 values ('%','root', '', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+Query OK, 1 row affected, 1 warning (0.00 sec)
+
+root@MySQL-01 15:52:  [mysql]> insert into mysql.user_1 values ('%','joowingbuz', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+Query OK, 1 row affected, 1 warning (0.00 sec)
+
+root@MySQL-01 15:52:  [mysql]> insert into mysql.user_1 values ('%','ottersync', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+Query OK, 1 row affected, 1 warning (0.00 sec)
+
+root@MySQL-01 15:52:  [mysql]> insert into mysql.user_1 values ('%','syncdw', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+
+root@MySQL-01 15:52:  [mysql]> insert into mysql.user_1 values ('%','datasis', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+Query OK, 1 row affected, 1 warning (0.00 sec)
+
+root@MySQL-01 15:52:  [mysql]> insert into mysql.user_1 values ('%','joowingv', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+Query OK, 1 row affected, 1 warning (0.01 sec)
+
+root@MySQL-01 15:52:  [mysql]> insert into mysql.user_1 values ('%','datadev', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+Query OK, 1 row affected, 1 warning (0.00 sec)
+
+root@MySQL-01 15:52:  [mysql]> insert into mysql.user_1 values ('%','readonly', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('123'));
+Query OK, 1 row affected, 1 warning (0.00 sec)
+
+root@MySQL-01 15:52:  [mysql]> select user,host,authentication_string from mysql.user;
++------+-----------+-------------------------------------------+
+| user | host      | authentication_string                     |
++------+-----------+-------------------------------------------+
+| root | localhost | *D4DF57DFB7019B3D8C4294CC413AF1D650A275E4 |
+| root | 127.0.0.1 | *D4DF57DFB7019B3D8C4294CC413AF1D650A275E4 |
+| root | ::1       | *D4DF57DFB7019B3D8C4294CC413AF1D650A275E4 |
++------+-----------+-------------------------------------------+
+3 rows in set (0.00 sec)
+
+root@MySQL-01 15:52:  [mysql]> select user,host,authentication_string from mysql.user_1;
++------------+------+-------------------------------------------+
+| user       | host | authentication_string                     |
++------------+------+-------------------------------------------+
+| ottersync  | %    | *9443FA914A2D69FE8832F8294E7422CC1B02A492 |
+| joowingbuz | %    | *DFFDA1CA6135E355EF468AB13A465BB5D4FE2B11 |
+| root       | %    | *89BE852E4EECFD217F0C5463FB30AD25BD0751E0 |
+| syncdw     | %    | *3DD7B4B4F6EE968FF3452B607BDEE6294B6A425A |
+| datasis    | %    | *011D511C71990F832C531A0F9CFB34CF7BB4E485 |
+| joowingv   | %    | *56B364074270DF7F6D670A6B4F5A4AD13322397A |
+| datadev    | %    | *D3D73E0F6BFC3159B024EF31484B6F9CC2963C5B |
+| readonly   | %    | *E2BA196C0C7F409990FDB3FAB5F9C7CE95F7C449 |
++------------+------+-------------------------------------------+
+8 rows in set (0.00 sec)
+
+
+root@joowing-server-06:~# /data/mysql/support-files/mysql.server stop
+Shutting down MySQL
+...... * 
+
+
+root@joowing-server-06:~# cd /data/xtrabackup_data/
+root@joowing-server-06:/data/xtrabackup_data# cd mysql
+root@joowing-server-06:/data/xtrabackup_data/mysql# ll user*
+-rw-r----- 1 mysql mysql 10630 8月  14 15:42 user_1.frm
+-rw-r----- 1 mysql mysql   744 8月  14 15:52 user_1.MYD
+-rw-r----- 1 mysql mysql  2048 8月  14 15:53 user_1.MYI
+-rw-r----- 1 mysql mysql 10630 8月   9 20:14 user.frm
+-rw-r----- 1 mysql mysql 98304 8月   9 20:14 user.ibd
+-rw-r--r-- 1 mysql mysql   328 8月   9 20:14 user.MYD
+-rw-r--r-- 1 mysql mysql  2048 8月   9 20:14 user.MYI
+-rw-r----- 1 mysql mysql  3569 8月   9 20:14 user.TRG
+-rw-r----- 1 mysql mysql  3982 8月   9 20:14 user_view.frm
+root@joowing-server-06:/data/xtrabackup_data/mysql# mv user.frm user.ibd user.MYD user.MYI user.TRG /data
+root@joowing-server-06:/data/xtrabackup_data/mysql# ll user*
+-rw-r----- 1 mysql mysql 10630 8月  14 15:42 user_1.frm
+-rw-r----- 1 mysql mysql   744 8月  14 15:52 user_1.MYD
+-rw-r----- 1 mysql mysql  2048 8月  14 15:53 user_1.MYI
+-rw-r----- 1 mysql mysql  3982 8月   9 20:14 user_view.frm
+root@joowing-server-06:/data/xtrabackup_data/mysql# mv user_1.frm user.frm
+root@joowing-server-06:/data/xtrabackup_data/mysql# mv user_1.MYI user.MYI
+root@joowing-server-06:/data/xtrabackup_data/mysql# mv user_1.MYD user.MYD
+root@joowing-server-06:/data/xtrabackup_data/mysql# ll user*
+-rw-r----- 1 mysql mysql 10630 8月  14 15:42 user.frm
+-rw-r----- 1 mysql mysql   744 8月  14 15:52 user.MYD
+-rw-r----- 1 mysql mysql  2048 8月  14 15:53 user.MYI
+-rw-r----- 1 mysql mysql  3982 8月   9 20:14 user_view.frm
+root@joowing-server-06:/data/xtrabackup_data/mysql# /data/mysql/support-files/mysql.server start
+Starting MySQL
+...... * 
+
+root@joowing-server-06:/data/xtrabackup_data/mysql# mysql -uroot -p'123'
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 5
+Server version: 5.7.20-log MySQL Community Server (GPL)
+
+Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+root@MySQL-01 15:55:  [(none)]> show slave status\G;
+*************************** 1. row ***************************
+               Slave_IO_State: Waiting for master to send event
+                  Master_Host: rm-uf6f05k2rg95s23bp.mysql.rds.aliyuncs.com
+                  Master_User: idc_slave
+                  Master_Port: 3306
+                Connect_Retry: 60
+              Master_Log_File: mysql-bin.001641
+          Read_Master_Log_Pos: 447207506
+               Relay_Log_File: joowing-server-06-relay-bin.000225
+                Relay_Log_Pos: 35529076
+        Relay_Master_Log_File: mysql-bin.001641
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
+              Replicate_Do_DB: 
+          Replicate_Ignore_DB: 
+           Replicate_Do_Table: 
+       Replicate_Ignore_Table: 
+      Replicate_Wild_Do_Table: 
+  Replicate_Wild_Ignore_Table: mysql.%,sys.%,information_schema.%
+                   Last_Errno: 0
+                   Last_Error: 
+                 Skip_Counter: 0
+          Exec_Master_Log_Pos: 447207506
+              Relay_Log_Space: 35529295
+              Until_Condition: None
+               Until_Log_File: 
+                Until_Log_Pos: 0
+           Master_SSL_Allowed: No
+           Master_SSL_CA_File: 
+           Master_SSL_CA_Path: 
+              Master_SSL_Cert: 
+            Master_SSL_Cipher: 
+               Master_SSL_Key: 
+        Seconds_Behind_Master: 0
+Master_SSL_Verify_Server_Cert: No
+                Last_IO_Errno: 0
+                Last_IO_Error: 
+               Last_SQL_Errno: 0
+               Last_SQL_Error: 
+  Replicate_Ignore_Server_Ids: 
+             Master_Server_Id: 1095052097
+                  Master_UUID: b3e1de69-5daa-11e8-bed2-7cd30ab8a9fc
+             Master_Info_File: mysql.slave_master_info
+                    SQL_Delay: 0
+          SQL_Remaining_Delay: NULL
+      Slave_SQL_Running_State: Slave has read all relay log; waiting for more updates
+           Master_Retry_Count: 86400
+                  Master_Bind: 
+      Last_IO_Error_Timestamp: 
+     Last_SQL_Error_Timestamp: 
+               Master_SSL_Crl: 
+           Master_SSL_Crlpath: 
+           Retrieved_Gtid_Set: b3e1de69-5daa-11e8-bed2-7cd30ab8a9fc:97478646-97483368
+            Executed_Gtid_Set: b3e1de69-5daa-11e8-bed2-7cd30ab8a9fc:1-97483368,
+c39ecf19-5daa-11e8-aa9c-7cd30ac4764a:1-178658794,
+c69289d7-9bc9-11e8-b922-44a842431b62:1-12
+                Auto_Position: 1
+         Replicate_Rewrite_DB: 
+                 Channel_Name: 
+           Master_TLS_Version: 
+1 row in set (0.00 sec)
+
+ERROR: 
+No query specified
+
+
+# 验证只读账号
+mysql -uroot	-p'123'  -e "create database dbzyadmin;"
+mysql -ujoowingbuz -p'123'  -e "create database dbzyadmin;"
+mysql -uottersync -p'123'  -e "create database dbzyadmin;"
+mysql -usyncdw -p'123'  -e "create database dbzyadmin;"
+mysql -udatasis -p'123'  -e "create database dbzyadmin;"
+mysql -ujoowingv -p'123'  -e "create database dbzyadmin;"
+mysql -udatadev -p'123' -e "create database dbzyadmin;"
+mysql -ureadonly -p'123'  -e "create database dbzyadmin;"
+
+# 只读账号无法执行写操作，验证成功
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1044 (42000) at line 1: Access denied for user 'readonly'@'%' to database 'dbzyadmin'
+```
+
+#### 后续用户权限变更操作指南
+
+> 后续新增用户、删除用户、更改密码命令如下：
+
+##### 新增读写用户
+
+```shell
+insert into mysql.user_1 values ('%','【用户名】', '', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', '', '', '', '', 0, 0, 0, 0, '', password('【密码】'));
+```
+
+##### 新增只读用户
+
+```shell
+insert into mysql.user_1 values ('%','【用户名】', '', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', '', '', '', '', 0, 0, 0, 0, '', password('【密码】'));
+```
+
+##### 删除用户命令
+
+```shell
+delete from mysql.user where user='【用户名】';
+```
+
+##### 修改密码
+
+```shell
+update mysql.user set authentication_string=password('【密码】') where user='【用户名】';
+```
+
+## 后记
+
+RDS目前使用MySQL版本和官方在系统库上差异还是很大的，若需要搭建RDS到线下自建MySQL5.7的主从时，可以通过此法去实现。
+
+本文中对user表的破解，同样适适用于`mysql.db` 、`mysql.tables_priv`表，都破解则可以将权限从用户拓展到库表列。读者可自行实验测试。
+
+
+
