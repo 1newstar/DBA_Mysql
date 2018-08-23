@@ -1,3 +1,12 @@
+
+SELECT table_name,table_rows,data_length,index_length,(data_length+index_length) data FROM information_schema.tables where table_schema='vingoo_ms' ;
+select sum(total_GB) total_GB
+from
+(select sum(data_length_GB) total_GB from (select table_name,
+(round(data_length/1024/1024/1024,2) + round(index_length/1024/1024/1024,2) )as data_length_GB
+from information_schema.`tables` where table_schema = "vingoo_ms") t1)t2;
+
+
 vmstat 1 5 													
 iostat -dkx 1 5												
 netstat -nat | awk '{print $6}'| sort | uniq -c				
