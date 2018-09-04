@@ -1,6 +1,6 @@
 #!/bin/bash
 # 备份单表 V.18.06.21.0
-# 备份目标 ecshop库
+# backup_mysql_single_table.sh
 DBUser=
 DBPwd=
 DBName=
