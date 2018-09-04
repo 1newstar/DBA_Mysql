@@ -40,3 +40,7 @@ mysql -u$DB_USER -p$DB_PASS -h$DB_HOST $DB_NAME  -e "select * from $TABLE2 into 
  
 # 远程传输到备份服务器
 scp -r $DB_PATH mysqlbackup@192.168.20.3:/alidata/backup_account/
+
+# 删除
+BackupPath=/alidata/backup_account
+find "$BackupPath" -type f -mtime +7 -exec rm -rf  {} \;
