@@ -168,8 +168,8 @@ def MySQLAutoSnapshotBackup():
     """
     logging.info('{}\t开始快照备份数据库'.format(datetime.datetime.now().strftime('%Y-%m-%dT%H:%MZ')))
     bin = '/alidata/mysql/support-files/mysql.server'
-    a = 'LTAIHNNZ8KgSj1xc'
-    k = 'clW8aApuwOe60EK2jPPtKdvAfdfCh6'
+    a = 'Laa'
+    k = 'lll'
     r = 'cn-shanghai'
     DiskId = 'd-uf6dnfbgdn5v2uah2gca'
     # 停服务
