@@ -1,0 +1,101 @@
+{
+  "configuration": {
+    "reader": {
+      "plugin": "mysql",
+      "parameter": {
+        "datasource": "manage",
+        "column": [
+          "trade_no_vingoo",
+          "trade_no_qpay",
+          "gmt_create",
+          "gmt_payment",
+          "trade_status",
+          "total_fee",
+          "price",
+          "amount",
+          "trade_type",
+          "brand_id",
+          "ts_brand_pid",
+          "openid",
+          "refund_no",
+          "sale_id",
+          "minus_fee",
+          "refund_fee",
+          "refund_status",
+          "refund_times",
+          "refund_date",
+          "refund_type",
+          "refund_desc",
+          "refund_op",
+          "refund_channel",
+          "checkout_flag",
+          "checkout_date",
+          "bank_type",
+          "bank_billno",
+          "expand",
+          "date_add"
+        ],
+        "where": "",
+        "connection": [
+          {
+            "datasource": "manage",
+            "table": [
+              "`vg_sales_qpay`"
+            ]
+          }
+        ],
+        "splitPk": "",
+        "connectionTable": "`vg_sales_qpay`"
+      }
+    },
+    "writer": {
+      "plugin": "odps",
+      "parameter": {
+        "partition": "",
+        "truncate": true,
+        "datasource": "odps_first",
+        "column": [
+          "trade_no_vingoo",
+          "trade_no_qpay",
+          "gmt_create",
+          "gmt_payment",
+          "trade_status",
+          "total_fee",
+          "price",
+          "amount",
+          "trade_type",
+          "brand_id",
+          "ts_brand_pid",
+          "openid",
+          "refund_no",
+          "sale_id",
+          "minus_fee",
+          "refund_fee",
+          "refund_status",
+          "refund_times",
+          "refund_date",
+          "refund_type",
+          "refund_desc",
+          "refund_op",
+          "refund_channel",
+          "checkout_flag",
+          "checkout_date",
+          "bank_type",
+          "bank_billno",
+          "expand",
+          "date_add"
+        ],
+        "table": "vg_sales_qpay"
+      }
+    },
+    "setting": {
+      "speed": {
+        "throttle": false,
+        "concurrent": 5,
+        "dmu": 10
+      }
+    }
+  },
+  "type": "job",
+  "version": "1.0"
+}

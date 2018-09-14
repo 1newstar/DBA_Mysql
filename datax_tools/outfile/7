@@ -1,0 +1,51 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                 "channel": 3
+            },
+            "errorLimit": {
+                "record": 0,
+                "percentage": 0.02
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "mysqlreader",
+                    "parameter": {
+                        "username": "root",
+                        "password": "password",
+                        "connection": [
+                            {
+                                "querySql": [
+                                    "select * from yutao where UpdateTime < '$bizdate';"
+                                ],
+                                "jdbcUrl": [
+                                     "jdbc:mysql://url:3306/dbname"
+                                ]
+                            }
+                        ]
+                    }
+                },
+				"writer": {
+                    "name": "mysqlwriter",
+                    "parameter": {
+                        "writeMode": "replace",
+                        "username": "root",
+                        "password": "password",
+                        "column": ['*'],
+                        "connection": [
+                            {
+                                "jdbcUrl": "jdbc:mysql//url:3306/dbname",
+                                "table": [
+                                    "yutao"
+                                ]
+                            }
+                        ]
+                    }
+                }
+	        }
+        ]
+    }
+}

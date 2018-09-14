@@ -1,0 +1,51 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                 "channel": 3
+            },
+            "errorLimit": {
+                "record": 0,
+                "percentage": 0.02
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "mysqlreader",
+                    "parameter": {
+                        "username": "${reader_username}",
+                        "password": "${reader_password}",
+                        "connection": [
+                            {
+                                "querySql": [
+                                    "select * from ${reader_table} where UpdateTime < '$$bizdate';"
+                                ],
+                                "jdbcUrl": [
+                                     "${reader_datasource}"
+                                ]
+                            }
+                        ]
+                    }
+                },
+				"writer": {
+                    "name": "mysqlwriter",
+                    "parameter": {
+                        "writeMode": "replace",
+                        "username": "${writer_username}",
+                        "password": "${writer_password}",
+                        "column": ['*'],
+                        "connection": [
+                            {
+                                "jdbcUrl": "${writer_dataresource}",
+                                "table": [
+                                    "${writer_table}"
+                                ]
+                            }
+                        ]
+                    }
+                }
+	        }
+        ]
+    }
+}
