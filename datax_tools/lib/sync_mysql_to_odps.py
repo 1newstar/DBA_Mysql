@@ -64,7 +64,7 @@ class Mc_insert():
         writer_column = reader_column
         writer_table = '"'+writer_table+'"'
 
-        a = open('../mould/mould_mysql_to_odps').read()
+        a = open('../module/mould_mysql_to_odps').read()
         s1 = Template(a)
         s2 = s1.substitute(reader_datasource = reader_datasource,reader_column = reader_column,reader_table = reader_table,reader_connectionTable = reader_connectionTable,writer_column = writer_column,writer_table = writer_table)
         return s2
@@ -84,7 +84,7 @@ class Mc_insert():
             reader_column = self.get_reader_column(table)
             writer_table = reader_table
             writer_column = reader_column
-            a = open('../mould/mould_mysql_to_odps').read()
+            a = open('../module/mould_mysql_to_odps').read()
             s1 = Template(a)
             s2 = s1.substitute(reader_datasource = reader_datasource,reader_column = reader_column,reader_table = reader_table,reader_connectionTable = reader_connectionTable,writer_column = writer_column,writer_table = writer_table)
             yield s2

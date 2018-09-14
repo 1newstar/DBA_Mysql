@@ -47,7 +47,7 @@ class Mc_insert():
         """
         reader_table_list = self.mysql.print_one_column_list(self.table_tuple)
         for table in reader_table_list:
-            a = open('../mould/mould_mysql_to_mysql').read()
+            a = open('../module/mould_mysql_to_mysql').read()
             s1 = Template(a)
             s2 = s1.substitute(reader_username = reader_username,reader_password = reader_password,reader_datasource = reader_datasource,reader_table = table,writer_username = writer_username,writer_password = writer_password,writer_dataresource = write_dataresource,writer_table = table)
             with open('../outfile/' + table + '.json', 'w') as outfile:

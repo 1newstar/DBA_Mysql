@@ -68,7 +68,7 @@ class Mc_insert():
             writer_table = reader_table
             writer_column = reader_column
             partition = partition
-            a = open('../mould/mould_mysql_to_ads').read()
+            a = open('../module/mould_mysql_to_ads').read()
             s1 = Template(a)
             s2 = s1.substitute(reader_datasource = reader_datasource,reader_column = reader_column,reader_table = reader_table,reader_connectionTable = reader_connectionTable,writer_column = writer_column,writer_table = writer_table,partition=partition)
             yield s2
