@@ -10,7 +10,7 @@ import threading
 
 
 #mysql命令路径
-mysqlcmd = os.popen("find /usr -name mysql -type f 2>/dev/null|head -n 1").read().strip()
+mysqlcmd = os.popen("find /aliadta/mysql/bin -name mysql -type f 2>/dev/null|head -n 1").read().strip()
 if len(mysqlcmd.strip()) == 0:
     print 'no mysql cmd'
     exit(-1)

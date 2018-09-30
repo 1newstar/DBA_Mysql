@@ -1,3 +1,95 @@
+﻿创建的索引默认是BTREE
+
+【创建索引相关命令集合】
+
+利用alter命令修改id列为自增主键列：alter table student change id id int primary key auto_increment;
+
+删除主键索引：alter table student drop primary key;
+
+创建普通索引：alter table student add index index_dept(dept);
+
+根据列的前n个字符创建索引：alter table student add index index_dept(dept(8));  create index index_dept on student(dept(8));
+
+根据多个列创建联合索引create index index_name_dept on student(name,dept);
+
+删除普通索引：alter table student drop index index_name;drop index index_name_dept on student;
+
+创建唯一索引（非主键）：create unique index uni_ind_name on student(name);
+
+基本索引条件：1、要在表的列上创建索引。2、索引会加快查询速度，但频繁更新需要维护索引，影响更新速度。3、索引不是越多越好，要在频繁查询的where后的条件列上创建索引。4、小表或唯一值极少的列上不建立索引，要在大表以及唯一值多的列上创建索引。
+
+避免过度使用索引：1、索引的建立对提高检索能力很有用，但是数据库维护它也很费资源2、对性别列(或状态列)索引，被称为过度索引；只有两个值，建立索引不仅没优势，还会影响到插入、更新速度。3、索引会占用磁盘空间，降低更新操作性能。4、索引不是越多越好，索引过多，执行计划要考虑使用哪个索引5、行数比较少的表可以不建索引（100行以内）
+
+mysql> show full processlist; #<---查看所有sql语句执行情况
+ 
+①使用explain命令查看sql语句的执行情况(是否走索引)：
+mysql> explain select * from test where name='oldgirl'\G; 
+*************************** 1. row ***************************
+           id: 1
+ select_type: SIMPLE
+       table: test
+         type: ALL
+possible_keys: NULL 从查看的结果看出，查询的时候没有走索引
+         key: NULL
+     key_len: NULL
+         ref: NULL
+         rows: 4   总结查询了4行
+       Extra: Using where
+1 row in set (0.00 sec)
+ 
+②SQL优化后的测试，explain命令不走缓存测试：
+mysql> explain SQL_NO_CACHE select * from test where name='oldgirl'\G; 
+ 
+ 
+③查看表的索引：
+mysql> show index from 表名\G
+ 
+④查建表的语句（可以看索引及创建表的相关信息）：
+show create table 表名\G
+ 
+⑤查是不是authorid列内容不同的列，越大建立索引效果越好(查看唯一值的数量)：
+select count(distinct authorid) from 表名;
+select count(authorid) from 表名;
+ 
+select count(*) from 表名; #<--查看整个表的列的总数是多少
+MySQL数据库使用索引的条件：
+
+①MySQL(BTREE)使用索引的比较条件：
+
+ 
+<, <=, =, >, >=, BETTWEEN, IN!= 或者<> 或者LIKE 'xxx%'
+②索引的列不包含NULL值
+
+ 
+复合索引中只要有一列含有NULL值，那么这一列将不会使用索引。
+所以在数据库设计时，不要让字段的默认值为NULL
+③列类型是字符串，要在where条件中把字符串值用引号括起来
+
+④用or分割开的条件，or前条件有索引，而后面列无索引，那么设计的索引都不会被用到
+
+⑤条件不是索引列的第一部分。key(a,b)...where b=5 will not use index
+
+⑥like语句操作
+
+ 
+一般情况下尽量不适用like操作。like "%aaa%" 不会使用索引，而like "aaa%"可以使用索引。
+可以建立fulltext或者Sphinx(斯芬克司)，去专门应对搜索功能，不要使用数据库去完成这种搜索。
+⑦不要在列上进行计算
+
+ 
+select * from users where YEAR(adddate)<2007;将在每个行上进行计算，这将导致索引失效而进行全表扫描，因此我们可以改成select * from users where adddate<'2007-01-01';
+⑧不使用NOT IN和<>操作
+
+ 
+NOT IN 和<>操作都不会使用索引，将进行全表扫描。NOT IN可以NOT EXISTS代替，id<>3则可使用id>3 or id<3来代替
+其它：尽量用连接查询代替子查询(嵌套查询)
+⑨Order by的索引问题
+
+ 
+mysql查询只是用一个索引，因此如果where子句中已经使用了索引，order by中的列就不会再使用索引。因此数据库默认排序可以符合要求的情况下不要使用排序操作；尽量不要包含多个列的排序，如果需要最好给这些列创建复合索引。
+
+
+
 # 索引存放在statistics
 # 表存放在tables
 # 列存放在columns
