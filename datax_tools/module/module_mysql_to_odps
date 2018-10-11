@@ -1,0 +1,41 @@
+{
+ "configuration": {
+ "reader": {
+ "plugin": "mysql",
+ "parameter": {
+ "datasource": "${reader_datasource}",
+ "column": ${reader_column},
+ "where": "",
+ "connection": [
+ {
+ "datasource": "${reader_datasource}",
+ "table": [
+ ${reader_table}
+ ]
+ }
+ ],
+ "splitPk": "id",
+ "connectionTable": ${reader_connectionTable}
+ }
+ },
+ "writer": {
+ "plugin": "odps",
+ "parameter": {
+ "partition": "",
+ "truncate": true,
+ "datasource": "odps_first",
+ "column": ${writer_column},
+ "table": ${writer_table}
+ }
+ },
+ "setting": {
+ "speed": {
+ "throttle": false,
+ "concurrent": 20,
+ "dmu": 20
+ }
+ }
+ },
+ "type": "job",
+ "version": "1.0"
+}

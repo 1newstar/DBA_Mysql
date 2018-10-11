@@ -1,0 +1,45 @@
+{
+  "configuration": {
+    "reader": {
+      "plugin": "mysql",
+      "parameter": {
+        "datasource": "rds1",
+        "column": [
+          "id"
+        ],
+        "where": "",
+        "connection": [
+          {
+            "datasource": "rds1",
+            "table": [
+              "`ran`"
+            ]
+          }
+        ],
+        "splitPk": "",
+        "connectionTable": "`ran`"
+      }
+    },
+    "writer": {
+      "plugin": "odps",
+      "parameter": {
+        "partition": "",
+        "truncate": true,
+        "datasource": "odps_first",
+        "column": [
+          "id"
+        ],
+        "table": "ran"
+      }
+    },
+    "setting": {
+      "speed": {
+        "throttle": false,
+        "concurrent": "2",
+        "dmu": "1"
+      }
+    }
+  },
+  "type": "job",
+  "version": "1.0"
+}

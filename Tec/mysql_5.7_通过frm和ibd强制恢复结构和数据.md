@@ -8,7 +8,7 @@
 
 ## 写在前面
 
-Cash恢复的正确方式是：**备份文件（逻辑或物理）+ binlog**进行恢复；然而并不是所有的运维人员都知道怎么进行正确的备份，甚至连逻辑备份和物理备份的区别是什么都不知道？更不知道备份过程中需要考虑数据的一致性与服务可用性的问题？或者连备份工具都不会使用，所以当你问：有备份吗？回答：没有或者无效
+Crash恢复的正确方式是：**备份文件（逻辑或物理）+ binlog**进行恢复；然而并不是所有的运维人员都知道怎么进行正确的备份，甚至连逻辑备份和物理备份的区别是什么都不知道？更不知道备份过程中需要考虑数据的一致性与服务可用性的问题？或者连备份工具都不会使用，所以当你问：有备份吗？回答：没有或者无效
 
 在本次案例中，某客户只对单个`cy`库所属的目录进行了文件层面的备份，MySQL使用5.7.17版本，使用innodb存储引擎，开启了独立表空间。也就是说当前的救命稻草是：每个表的`.frm`和`.ibd`文件。
 
@@ -211,7 +211,7 @@ def create_table_test(table_file,sql_file):
    
 
 if __name__ == '__main__':
-    create_table_test('/alidata/cy_sql1.sql','/alidata/cy_table.txt')
+    create_table_test('/alidata/cy_table.txt'，'/alidata/cy_sql1.sql')
 
 [root@toberoot alidata]# python /alidata/py_createtable01.py 
 [root@toberoot alidata]# head /alidata/cy_sql1.sql 
@@ -655,3 +655,85 @@ ERROR 2013 (HY000) at line 1: Lost connection to MySQL server during query
 这次case的教训就是，备份！一定要有周期性的有效备份！
 
 欺骗MySQL进程蒙混过关只能是没办法的办法，而且不能保证成功率。
+
+```shell
+# -*- coding : utf8 -*-
+# py_createtable01.py
+# auth： booboowei
+
+
+class mysql_tools():
+    def __init__(self, in_file):
+        self.b_list = open(in_file).readlines()
+
+       
+    def create_table_test(self, sql_file):
+        a_file = open(sql_file, 'w')
+        for table in self.b_list:
+            string = "create table {} (id int);".format(table)
+            a_file.write(string)
+        a_file.close()
+    
+    
+    def desc_table_test(self, sql_file):
+        a_file = open(sql_file, 'w')
+        for table in self.b_list:
+            string = "desc {};".format(table)
+            a_file.write(string)
+        a_file.close()
+    
+    
+    def create_table_col(self, sql_file):
+        a_file = open(sql_file, 'w')
+        str_list = []
+        for table_col_str in self.b_list:
+            table_col_list = table_col_str.split()
+            table = table_col_list[0]
+            col = int(table_col_list[1])
+            string = "create table {} (".format(table)
+            str_list.append(string)
+            for i in range(1, col + 1):
+                if i != col:
+                    string = 'id{} int,'.format(i)
+                else:
+                    string = 'id{} int);'.format(i)
+                str_list.append(string)
+        for line in str_list:
+            a_file.write(line)
+        a_file.close()
+    
+    
+    def drop_table_test(self,  sql_file):
+        a_file = open(sql_file, 'w')
+        for table in self.b_list:
+            string = "drop table {};".format(table)
+            a_file.write(string)
+        a_file.close()
+    
+    
+    def discard_table_test(self, sql_file):
+        a_file = open(sql_file, 'w')
+        for table in self.b_list:
+            string = "alter table {} discard tablespace;".format(table)
+            a_file.write(string)
+        a_file.close()
+    
+    
+    def import_table_test(self, sql_file):
+        a_file = open(sql_file, 'w')
+        for table in self.b_list:
+            string = "alter table {} import tablespace;".format(table)
+            a_file.write(string)
+        a_file.close()
+
+
+if __name__ == '__main__':
+    mysql_tools('/alidata/cy_table.txt').create_table_test('/alidata/cy_sql1.sql')
+    mysql_tools('/alidata/cy_table.txt').desc_table_test('/alidata/cy_sql2.sql')
+    # 根据以上表名和列数生成新的测试表
+    mysql_tools('/alidata/cy_table_col.txt').create_table_col('/alidata/cy_sql3.sql')
+    mysql_tools('/alidata/cy_table.txt').drop_table_test('/alidata/cy_sql4.sql')
+    mysql_tools('/alidata/cy_table.txt').discard_table_test('/alidata/cy_sql5.sql')
+    mysql_tools('/alidata/cy_table.txt').import_table_test('/alidata/cy_sql6.sql')
+```
+
