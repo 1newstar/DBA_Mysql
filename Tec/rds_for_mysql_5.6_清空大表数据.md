@@ -38,3 +38,11 @@ rm -rf test_tbname.ibd.hlink;
 
 > 帮助文档：https://blog.csdn.net/haojianxiang/article/details/78531760
 
+## 实际经验
+
+```shell
+abnormal_log_history20181025 这个表376G，没有索引
+drop table abnormal_log_history20181025
+执行成功，耗时：[10189ms.]﻿
+```
+

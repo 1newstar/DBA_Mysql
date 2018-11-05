@@ -9,7 +9,13 @@
 
 ## 归档工具
 
-`percona-toolkit-3.0.10 `
+`percona-toolkit-3.0.11 `
+
+##软件下载地址
+
+https://www.percona.com/downloads/percona-toolkit/3.0.11/binary/tarball/percona-toolkit-3.0.11_x86_64.tar.gz
+
+https://www.percona.com/downloads/percona-toolkit/3.0.12/binary/tarball/percona-toolkit-3.0.12_x86_64.tar.gz
 
 ## 安装
 
