@@ -1,5 +1,4 @@
 #!/bin/bash
-# ubuntu
 
 DIR=`pwd`
 DATE=`date +%Y%m%d%H%M%S`
