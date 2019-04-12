@@ -1,5 +1,4 @@
 #!/bin/bash
-# ubuntu
 
 DIR=`pwd`
 DATE=`date +%Y%m%d%H%M%S`
@@ -14,7 +13,7 @@ mkdir -p /alidata/mysql/mybinlog
 
 cd /alidata/install
 if [ `uname -m` == "x86_64" ];then
-  if [ ! -f Percona-Server-5.7.20-18-Linux.x86_64.ssl101.tar.gz];then
+  if [ ! -f Percona-Server-5.7.20-18-Linux.x86_64.ssl101.tar.gz ];then
 	 curl -O "https://www.percona.com/downloads/Percona-Server-LATEST/Percona-Server-5.7.20-18/binary/tarball/Percona-Server-5.7.20-18-Linux.x86_64.ssl101.tar.gz"
   fi
   tar -xzvf Percona-Server-5.7.20-18-Linux.x86_64.ssl101.tar.gz
@@ -63,7 +62,9 @@ relay_log_info_repository = TABLE
 gtid_mode = on
 enforce_gtid_consistency = 1
 log_slave_updates
-
+replicate_wild_ignore_table=mysql.%
+replicate_wild_ignore_table=sys.%
+replicate_wild_ignore_table=information_schema.%
 
 [mysqldump]
 quick

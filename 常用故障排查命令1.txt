@@ -1,3 +1,8 @@
+# 查看存储过程
+select name from mysql.proc where db='joowingdw';
+
+
+
 # 抓包工具获取来源于某个ip的服务器与3306的通信情况
 tcpdump -w tcp.out port 3306 and src 10.197.0.181
 strings tcp.out > tcp.txt

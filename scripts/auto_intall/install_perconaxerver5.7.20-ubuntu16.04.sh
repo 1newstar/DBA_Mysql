@@ -63,7 +63,9 @@ relay_log_info_repository = TABLE
 gtid_mode = on
 enforce_gtid_consistency = 1
 log_slave_updates
-
+replicate_wild_ignore_table=mysql.%
+replicate_wild_ignore_table=sys.%
+replicate_wild_ignore_table=information_schema.%
 
 [mysqldump]
 quick

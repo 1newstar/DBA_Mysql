@@ -7,9 +7,7 @@
 
 > **摘要**
 >
-> 阿里云官网表示目前不支持RDS For MySQL 5.7 到自建MySQL的主从搭建，本篇文档尝试突破阿里云限制。经过多次验证发现，RDS使用的应该是Percona的数据库服务器，并进行了二次开发。
-> 第一种方法：物理备份还原后，更新数据库 `mysql_upgrade --force`
-> 第二种方法：物理备份还原后，手动修改系统库引擎
+> 阿里云官网表示目前不支持RDS For MySQL 5.7 到自建MySQL的主从搭建，本篇文档尝试突破阿里云限制。经过多次验证发现，PerconaServer与RDS的兼容性最高， 破解方法为：使用Percona Server，在物理备份还原后，手动修改系统库引擎，已达到数据实时同步，且能够正常于从库进行权限配置。
 
 ## 背景
 
@@ -97,12 +95,16 @@ select table_name,engine from information_schema.tables where table_schema='mysq
 
 ### 具体操作步骤
 
-#### 自建MySQL安装
+#### 1 自建MySQL安装
 
 ```shell
-wget ""
-bash 
+wget "https://raw.githubusercontent.com/BoobooWei/DBA_Mysql/master/scripts/auto_intall/install_perconaxerver5.7.20_centos7.sh"
+bash install_perconaxerver5.7.20_centos7.sh
+/alidata/mysql/support-files/mysql.server start
+mysql -e "select @@version;"
 ```
+
+如果返回`5.7.20-log`则说明已成功安装并启动了数据库服务。
 
 软件架构如下：
 
@@ -115,32 +117,71 @@ bash
 | 配置文件                | /etc/my.cnf                    |
 | RDS备份文件下载解压目录 | /alidata/mysql/xtrabackup_data |
 
-### 备份RDS的元数据（与本地有差别的表）
+#### 2 全备份文件下载并解压
+
+登陆到阿里云RDS控制台，选择最近的全备份进行下载，全备份时间不能超过binlog设置的过期时间。
+
+```shell
+curl -o "hins4764419_data_20180913072637.tar.gz" "http://rdsbak-shanghai-v2.oss-cn-shanghai-internal.aliyuncs.com/asldkjalsdkjflasdjf"
+```
+
+下载pxc工具以及阿里云专用解压工具
+
+```shell
+wget https://raw.githubusercontent.com/BoobooWei/DBA_Mysql/master/scripts/auto_intall/install_rds_pxc_centos7.sh
+bash install_rds_pxc_centos7.sh
+```
+开始解压全备份数据
+
+```shell
+# 全备份恢复
+bash rds_backup_extract.sh -f hins4764419_data_20180913072637.tar.gz -C /alidata/mysql/xtrabackup_data
+# applay-log
+innobackupex --apply-log /alidata/mysql/xtrabackup_data
+chown mysql. -R /alidata/mysql/xtrabackup_data
+```
+如果数据量很大，这一步会非常耗时。
+
+#### 3 将全备份数据恢复
+
+停止数据库服务
+
+```shell
+/alidata/mysql/support-files/mysql.server stop
+```
+
+将初始化的数据库数据目录重命名为data_back
+```shell
+mv /alidata/mysql/data/ /alidata/mysql/data_back
+```
+
+将pxc恢复的全备份文件目录重命名为data
+
+```shell
+mv /alidata/mysql/xtrabackup_data /alidata/mysql/data
+```
+
+启动本地数据库
+
+```shell
+/alidata/mysql/support-files/mysql.server start
+```
+#### 4 手动修改系统库
+
+备份RDS的元数据（与本地有差别的表）
+
+```shell
+mysqldump -u$rds_user -p$rds_pwd -h$rds_url -P $rds_port mysql columns_priv db event func ndb_binlog_index proc procs_priv proxies_priv tables_priv user  --set-gtid-purged=OFF --opt --default-character-set=utf8  --single-transaction --hex-blob --skip-triggers --max_allowed_packet=824288000 -d  > mysql.sys.meta.sql
+```
 
 备份rds差异表的数据
 
-
-
 ```shell
-#!/bin/bash
-# auth:BoobooWei
-# mail:rgweiyaping@hotmail.com
-# info:搭建RDS到自建MySQL主从
-# pxc备份数据恢复路径
-pxc_data=/alidata/mysql/xtrabackup_data
-gtid=
-# 本地自建数据库数据目录
-datadir='/alidata/mysql/data/mysql'
-# rds数据库连接方式
-rds_user='root'
-rds_pwd='Uploo00king'
-rds_url='ssss'
-rds_port=3306
-# 备份RDS的元数据（与本地有差别的表）
-mysqldump -u$rds_user -p$rds_pwd -h$rds_url -P $rds_port mysql columns_priv db event func ndb_binlog_index proc procs_priv proxies_priv tables_priv user  --set-gtid-purged=OFF --opt --default-character-set=utf8  --single-transaction --hex-blob --skip-triggers --max_allowed_packet=824288000 -d  > mysql.sys.meta.sql
-# 备份rds差异表的数据
 mysqldump -u$rds_user -p$rds_pwd -h$rds_url -P $rds_port mysql columns_priv db event func ndb_binlog_index proc procs_priv proxies_priv tables_priv user  --set-gtid-purged=OFF --opt --default-character-set=utf8  --single-transaction --hex-blob --skip-triggers --max_allowed_packet=824288000 -t > mysql.sys.data.sql 
-# 删除本地恢复的差别表
+```
+
+删除本地恢复的差别表
+```shell
 cat > local_drop.sql << ENDF
 drop table columns_priv ;
 drop table db;
@@ -154,8 +195,10 @@ drop table tables_priv;
 drop table user;
 ENDF
 mysql < local_drop.sql 
+```
 
-# 删除本地数据文件
+删除本地数据文件
+```shell
 cd $datadir
 rm -rf columns_priv\.*
 rm -rf db\.*
@@ -167,49 +210,70 @@ rm -rf procs_priv\.*
 rm -rf proxies_priv\.*
 rm -rf tables_priv\.* 
 rm -rf user\.* 
- 
-# 查看数据文件
-ll columns_priv\.*
-ll db\.*
-ll event\.*
-ll func\.*
-ll ndb_binlog_index\.*
-ll proc\.*
-ll procs_priv\.*
-ll proxies_priv\.*
-ll tables_priv\.* 
-ll user\.* 
- 
-# 导入元数据（即表结构）
+```
+
+导入元数据（即表结构）
+```shell
 sed -i 's/ENGINE=InnoDB/ENGINE=myisam/' mysql.sys.meta.sql
 mysql mysql < mysql.sys.meta.sql
- 
-# 导入数据
-mysql mysql < mysql.sys.data.sql
+```
 
+导入数据
+```shell
+mysql mysql < mysql.sys.data.sql
+```
+
+添加权限
+```shell
 cat > local_grant.sql << ENDF
-# 添加权限
 grant all on *.* to 'booboo'@'%' identified by 'Uploo00king';
-# 修改aliyun_root权限
 update mysql.user set authentication_string=password('Uploo00king') where user='aliyun_root';
 ENDF
 
 mysql < local_grant.sql
-# 重新启动服务
+```
+
+重新启动服务
+```shell
 /alidata/mysql/support-files/mysql.server restart
+```
 
+#### 5 配置主从
 
-# 配置主从
+停止本地数据库的replication线程，并清空相关配置
+
+```shell
 stop slave;
 reset slave all;
 reset master;
+```
+
+修改GTID参数
+```shell
 SET GLOBAL gtid_purged='$gtid';
+```
+
+配置主库同步信息
+```shell
 change master to master_host='$url',master_user='$user',master_password='$pwd',master_auto_position=1;
+```
+
+启动replication
+```shell
 start slave;
+```
+
+查看主从明细
+```shell
 show slave status\G;
 ```
 
+## 总结
+
+下面这幅图中最左侧为PerconaServer的系统表清空，中间这副是将RDS系统表修改后的结果，最右边是RDS的系统表情况。
+
+![](pic/rds05.png)
 
 
 
-
+通过手动修改自建MySQL系统库mysql中的表引擎，我们达到了RDS到自建MySQL实时同步的目的，且经过生产环境验证，该方法完全可以突破阿里限制实现云上和IDC机房的数据实时同步。
