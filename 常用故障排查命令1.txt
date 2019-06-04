@@ -55,22 +55,8 @@ table_name regexp '^app';
 select table_schema,table_name, TABLE_ROWS,round(data_length/1024/1024,2) as data_length_MB,round(index_length/1024/1024,2) 
 as index_length_MB from information_schema.tables order by data_length_MB desc,index_length_MB desc limit 10;
 
-# 统计总大小前10的表
-select table_schema,table_name, round(index_length+data_length,2) total_length, table_rows, data_length,index_length,data_free, round(data_free/(index_length+data_length),2) rate_data_free from information_schema.tables order by total_length desc limit 10;
-+--------------+------------------------+--------------+------------+-------------+--------------+-----------+----------------+
-| table_schema | table_name             | total_length | table_rows | data_length | index_length | data_free | rate_data_free |
-+--------------+------------------------+--------------+------------+-------------+--------------+-----------+----------------+
-| pony_tail    | security_check_results | 222740480.00 |     411895 |   183271424 |     39469056 |   6291456 |           0.03 |
-| pony_tail    | resource_snapshots     | 130269184.00 |     109512 |   120258560 |     10010624 |   3145728 |           0.02 |
-| pony_tail    | alert_all              |  54083584.00 |     148332 |    54083584 |            0 |   5242880 |           0.10 |
-| pony_tail    | alert_merge            |  31031296.00 |      66855 |    31031296 |            0 |   7340032 |           0.24 |
-| pony_tail    | customers              |  18382848.00 |       7555 |    17317888 |      1064960 |   4194304 |           0.23 |
-| pony_tail    | resource_hosts         |  11534336.00 |       2873 |    11026432 |       507904 |   4194304 |           0.36 |
-| mysql        | time_zone_transition   |   5783552.00 |     114223 |     5783552 |            0 |   2097152 |           0.36 |
-| pony_tail    | alert_merge_platinum   |   5783552.00 |      13380 |     5783552 |            0 |   4194304 |           0.73 |
-| pony_tail    | resource_disks         |   4898816.00 |       2354 |     4734976 |       163840 |   4194304 |           0.86 |
-| pony_tail    | accounts               |   1736704.00 |       2040 |     1589248 |       147456 |   4194304 |           2.42 |
-+--------------+------------------------+--------------+------------+-------------+--------------+-----------+----------------+
+# 统计非系统表的空间明细
+select table_schema,table_name, round(index_length+data_length,2) total_length, table_rows, data_length,index_length,data_free, round(data_free/(index_length+data_length),2) rate_data_free from information_schema.tables where table_schema not in ("information_schema", "mysql", "performance_schema") order by total_length desc;
 
 
 # 统计表总大小
