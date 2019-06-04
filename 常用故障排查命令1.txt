@@ -1,9 +1,9 @@
-# ²é¿´´æ´¢¹ı³Ì
+# æŸ¥çœ‹å­˜å‚¨è¿‡ç¨‹
 select name from mysql.proc where db='joowingdw';
 
 
 
-# ×¥°ü¹¤¾ß»ñÈ¡À´Ô´ÓÚÄ³¸öipµÄ·şÎñÆ÷Óë3306µÄÍ¨ĞÅÇé¿ö
+# æŠ“åŒ…å·¥å…·è·å–æ¥æºäºæŸä¸ªipçš„æœåŠ¡å™¨ä¸3306çš„é€šä¿¡æƒ…å†µ
 tcpdump -w tcp.out port 3306 and src 10.197.0.181
 strings tcp.out > tcp.txt
 
@@ -11,16 +11,16 @@ strings tcp.out > tcp.txt
 mysql>select id,State,command,info from information_schema.processlist where command = 'query';
 
 # SQLserver
-SQLÓï¾äµÄĞ§ÂÊÈçºÎ£º
+SQLè¯­å¥çš„æ•ˆç‡å¦‚ä½•ï¼š
 
 declare @d datetime
 set @d=getdate()
-/*ÄãµÄSQL½Å±¾¿ªÊ¼*/
+/*ä½ çš„SQLè„šæœ¬å¼€å§‹*/
 SELECT [TestCase] FROM [TestCaseSelect] 
-/*ÄãµÄSQL½Å±¾½áÊø*/
-select [Óï¾äÖ´ĞĞ»¨·ÑÊ±¼ä(ºÁÃë)]=datediff(ms,@d,getdate())
+/*ä½ çš„SQLè„šæœ¬ç»“æŸ*/
+select [è¯­å¥æ‰§è¡ŒèŠ±è´¹æ—¶é—´(æ¯«ç§’)]=datediff(ms,@d,getdate())
 
-# ·ÖÇø±íÖ¸¶¨Êı¾İÄ¿Â¼
+# åˆ†åŒºè¡¨æŒ‡å®šæ•°æ®ç›®å½•
 select @@have_symlink,@@innodb_file_per_table;
 /etc/my.cnf
 symbolic-links=1
@@ -42,7 +42,7 @@ ENGINE = innodb AUTO_INCREMENT = 1 DEFAULT CHARSET = utf8
 PARTITION BY RANGE (`id`)(
 PARTITION part01 VALUES LESS THAN MAXVALUE DATA DIRECTORY = "/mnt/data" );
 
-# ²é¿´±í´óĞ¡
+# æŸ¥çœ‹è¡¨å¤§å°
 
 select concat(round(data_length/1024/1024,2),'MB') as data_length_MB,concat(round(index_length/1024/1024,2),'MB') as index_length_MB
 from information_schema.tables 
@@ -50,14 +50,30 @@ where
 table_schema='ecshoptest'  and 
 table_name regexp '^app';
 
-# Í³¼Æ¿âÖĞ±íµÄ´óĞ¡°´ÕÕ´Ó´óµ½Ğ¡ÅÅĞò£¬È¥³ıtop10
+# ç»Ÿè®¡åº“ä¸­è¡¨çš„å¤§å°æŒ‰ç…§ä»å¤§åˆ°å°æ’åºï¼Œå»é™¤top10
 
 select table_schema,table_name, TABLE_ROWS,round(data_length/1024/1024,2) as data_length_MB,round(index_length/1024/1024,2) 
 as index_length_MB from information_schema.tables order by data_length_MB desc,index_length_MB desc limit 10;
 
+# ç»Ÿè®¡æ€»å¤§å°å‰10çš„è¡¨
+select table_schema,table_name, round(index_length+data_length,2) total_length, table_rows, data_length,index_length,data_free, round(data_free/(index_length+data_length),2) rate_data_free from information_schema.tables order by total_length desc limit 10;
++--------------+------------------------+--------------+------------+-------------+--------------+-----------+----------------+
+| table_schema | table_name             | total_length | table_rows | data_length | index_length | data_free | rate_data_free |
++--------------+------------------------+--------------+------------+-------------+--------------+-----------+----------------+
+| pony_tail    | security_check_results | 222740480.00 |     411895 |   183271424 |     39469056 |   6291456 |           0.03 |
+| pony_tail    | resource_snapshots     | 130269184.00 |     109512 |   120258560 |     10010624 |   3145728 |           0.02 |
+| pony_tail    | alert_all              |  54083584.00 |     148332 |    54083584 |            0 |   5242880 |           0.10 |
+| pony_tail    | alert_merge            |  31031296.00 |      66855 |    31031296 |            0 |   7340032 |           0.24 |
+| pony_tail    | customers              |  18382848.00 |       7555 |    17317888 |      1064960 |   4194304 |           0.23 |
+| pony_tail    | resource_hosts         |  11534336.00 |       2873 |    11026432 |       507904 |   4194304 |           0.36 |
+| mysql        | time_zone_transition   |   5783552.00 |     114223 |     5783552 |            0 |   2097152 |           0.36 |
+| pony_tail    | alert_merge_platinum   |   5783552.00 |      13380 |     5783552 |            0 |   4194304 |           0.73 |
+| pony_tail    | resource_disks         |   4898816.00 |       2354 |     4734976 |       163840 |   4194304 |           0.86 |
+| pony_tail    | accounts               |   1736704.00 |       2040 |     1589248 |       147456 |   4194304 |           2.42 |
++--------------+------------------------+--------------+------------+-------------+--------------+-----------+----------------+
 
 
-# Í³¼Æ±í×Ü´óĞ¡
+# ç»Ÿè®¡è¡¨æ€»å¤§å°
 
 select concat(round(sum(data_length/1024/1024),2),'MB') as data_length_MB,concat(round(sum(index_length/1024/1024),2),'MB') as index_length_MB
 from information_schema.tables 
@@ -65,27 +81,27 @@ where
 table_schema='ecshoptest'  and 
 table_name regexp '^app';
 
-# Í³¼Æ¿â´óĞ¡
+# ç»Ÿè®¡åº“å¤§å°
 
 select table_schema,round(sum(data_length/1024/1024),2) as data_length_MB,round(sum(index_length/1024/1024),2) 
 as index_length_MB from information_schema.tables  group by table_schema order by data_length_MB desc,index_length_MB desc;
 
 
 
-# ²é¿´¿Í»§¶Ë»á»°Á¬½Ó
+# æŸ¥çœ‹å®¢æˆ·ç«¯ä¼šè¯è¿æ¥
 mysql -uroot -p'xxx' -e "select host from information_schema.processlist" | awk -F ':' '{print $1}' | sort | uniq
 
 
-# ÄÚ´æ²é¿´
+# å†…å­˜æŸ¥çœ‹
 show variables where variable_name in (
 'innodb_buffer_pool_size','innodb_log_buffer_size','innodb_additional_mem_pool_size','key_buffer_size','query_cache_size');
 
-# sessionË½ÓĞÄÚ´æ
+# sessionç§æœ‰å†…å­˜
 mysql>show variables where variable_name in (
 'read_buffer_size','read_rnd_buffer_size','sort_buffer_size','join_buffer_size','binlog_cache_size','tmp_table_size');
 
 
-# RDSÂß¼­±¸·İ»Ö¸´Ô¤´¦Àí
+# RDSé€»è¾‘å¤‡ä»½æ¢å¤é¢„å¤„ç†
 
 #!/bin/bash
 sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/ ' $1 > tmp.sql
@@ -93,11 +109,11 @@ awk '{ if (index($0,"GTID_PURGED")) { getline; while (length($0) > 0) { getline;
 egrep -in "definer|set @@" your_revised.sql
 
 
-# ²é¿´metadatalock
+# æŸ¥çœ‹metadatalock
 
-## µÚÒ»ÖÖÇé¿ö£¬Ôò¶¨Î»µ½³¤Ê±¼äÎ´Ìá½»µÄÊÂÎñkill¼´¿É
+## ç¬¬ä¸€ç§æƒ…å†µï¼Œåˆ™å®šä½åˆ°é•¿æ—¶é—´æœªæäº¤çš„äº‹åŠ¡killå³å¯
 
-# ²éÑ¯ information_schema.innodb_trx ¿´µ½ÓĞ³¤Ê±¼äÎ´Íê³ÉµÄÊÂÎñ£¬ Ê¹ÓÃ kill ÃüÁîÖÕÖ¹¸Ã²éÑ¯¡£
+# æŸ¥è¯¢ information_schema.innodb_trx çœ‹åˆ°æœ‰é•¿æ—¶é—´æœªå®Œæˆçš„äº‹åŠ¡ï¼Œ ä½¿ç”¨ kill å‘½ä»¤ç»ˆæ­¢è¯¥æŸ¥è¯¢ã€‚
 
 select concat('kill ',i.trx_mysql_thread_id,';') from information_schema.innodb_trx i,
   (select 
@@ -115,10 +131,10 @@ select concat('kill ',i.trx_mysql_thread_id,';') from information_schema.innodb_
   where timestampdiff(second, i.trx_started, now()) > p.time
   and i.trx_mysql_thread_id  not in (connection_id(),p.id);
 
--- Çë¸ù¾İ¾ßÌåµÄÇé¾°ĞŞ¸Ä²éÑ¯Óï¾ä
--- Èç¹ûµ¼ÖÂ×èÈûµÄÓï¾äµÄÓÃ»§Óëµ±Ç°ÓÃ»§²»Í¬£¬ÇëÊ¹ÓÃµ¼ÖÂ×èÈûµÄÓï¾äµÄÓÃ»§µÇÂ¼À´ÖÕÖ¹»á»°
+-- è¯·æ ¹æ®å…·ä½“çš„æƒ…æ™¯ä¿®æ”¹æŸ¥è¯¢è¯­å¥
+-- å¦‚æœå¯¼è‡´é˜»å¡çš„è¯­å¥çš„ç”¨æˆ·ä¸å½“å‰ç”¨æˆ·ä¸åŒï¼Œè¯·ä½¿ç”¨å¯¼è‡´é˜»å¡çš„è¯­å¥çš„ç”¨æˆ·ç™»å½•æ¥ç»ˆæ­¢ä¼šè¯
 
-## µÚ¶şÖÖÇé¿ö£¬ÊÇÔÚµÚÒ»ÖÖÇé¿öµÄ»ù´¡ÉÏ£¬»¹ÊÇÓĞmetadatalockËø£¬ÔòÊÖ¶¯¼ÌĞøkillµô³¤ÊÂÎñ¼´¿É£¬×¢ÒâÉú²ú»·¾³ÖĞ£¬ÓĞ¿ÉÄÜddl²Ù×÷ĞèÒª±£Áô
+## ç¬¬äºŒç§æƒ…å†µï¼Œæ˜¯åœ¨ç¬¬ä¸€ç§æƒ…å†µçš„åŸºç¡€ä¸Šï¼Œè¿˜æ˜¯æœ‰metadatalocké”ï¼Œåˆ™æ‰‹åŠ¨ç»§ç»­killæ‰é•¿äº‹åŠ¡å³å¯ï¼Œæ³¨æ„ç”Ÿäº§ç¯å¢ƒä¸­ï¼Œæœ‰å¯èƒ½ddlæ“ä½œéœ€è¦ä¿ç•™
 
 select id,State,command from information_schema.processlist where State="Waiting for table metadata lock";
 select  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id,USER,DB,COMMAND,STATE,trx_state,trx_query from information_schema.processlist,information_schema.innodb_trx  where trx_mysql_thread_id=id;
@@ -126,7 +142,7 @@ show processlist;
 select  concat('kill ',trx_mysql_thread_id,';') from information_schema.processlist,information_schema.innodb_trx  where trx_mysql_thread_id=id and State!="Waiting for table metadata lock";
 
 
-## µÚÈıÖÖÇé¿öÃ»ÓĞ·¢ÏÖ³¤Ê±¼äÎ´Ìá½»µÄÊÂÎñ£¬µ«ÊÇ»á»°ÖĞÓĞmetadatalock
+## ç¬¬ä¸‰ç§æƒ…å†µæ²¡æœ‰å‘ç°é•¿æ—¶é—´æœªæäº¤çš„äº‹åŠ¡ï¼Œä½†æ˜¯ä¼šè¯ä¸­æœ‰metadatalock
 
 
 select id,State,command from information_schema.processlist where State="Waiting for table metadata lock";
@@ -134,16 +150,16 @@ select  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id,USER,D
 select t.processlist_id,t.processlist_time,e.sql_text from performance_schema.threads t,performance_schema.events_statements_current e where t.thread_id=e.thread_id and e.SQL_TEXT like '%gai%';
 
 --------------------------------------------------------------------------
-# ÓÃÓÚ·ÖÎö²é¿´metadatalock ËøµÄµÚÈıÖĞÇé¿öµÄÏ¸½ÚÎÊÌâ
+# ç”¨äºåˆ†ææŸ¥çœ‹metadatalock é”çš„ç¬¬ä¸‰ä¸­æƒ…å†µçš„ç»†èŠ‚é—®é¢˜
 
 select * from performance_schema.mutex_instances where LOCKED_BY_THREAD_ID is not null\G;
 
 
-# ²é¿´ÓĞmetalockËøµÄÏß³Ì
-# ²é¿´Î´Ìá½»µÄÊÂÎñÔËĞĞÊ±¼ä£¬Ïß³Ìid£¬ÓÃ»§µÈĞÅÏ¢
-# ²é¿´Î´Ìá½»µÄÊÂÎñÔËĞĞÊ±¼ä£¬Ïß³Ìid£¬ÓÃ»§£¬sqlÓï¾äµÈĞÅÏ¢
-# ²é¿´´íÎóÓï¾ä
-# ¸ù¾İ´íÎóÓï¾äµÄTHREAD_ID£¬²é¿´PROCESSLIST_ID
+# æŸ¥çœ‹æœ‰metalocké”çš„çº¿ç¨‹
+# æŸ¥çœ‹æœªæäº¤çš„äº‹åŠ¡è¿è¡Œæ—¶é—´ï¼Œçº¿ç¨‹idï¼Œç”¨æˆ·ç­‰ä¿¡æ¯
+# æŸ¥çœ‹æœªæäº¤çš„äº‹åŠ¡è¿è¡Œæ—¶é—´ï¼Œçº¿ç¨‹idï¼Œç”¨æˆ·ï¼Œsqlè¯­å¥ç­‰ä¿¡æ¯
+# æŸ¥çœ‹é”™è¯¯è¯­å¥
+# æ ¹æ®é”™è¯¯è¯­å¥çš„THREAD_IDï¼ŒæŸ¥çœ‹PROCESSLIST_ID
 
 select id,State,command from information_schema.processlist where State="Waiting for table metadata lock";
 select  timediff(sysdate(),trx_started) timediff,sysdate(),trx_started,id,USER,DB,COMMAND,STATE,trx_state,trx_query from information_schema.processlist,information_schema.innodb_trx  where trx_mysql_thread_id=id;
@@ -155,8 +171,8 @@ select * from information_schema.processlist where id=xxx\G;
 
 
 
-# ´´½¨ MySQLÊÂ¼ş£¬×Ô¶¯ÇåÀí³¤Ê±¼äÖ´ĞĞµÄ²éÑ¯¡£
-## ±ÈÈçÏÂÃæµÄ´úÂë»áÃ¿ 5 ·ÖÖÓÇåÀíÒ»´Îµ±Ç°ÓÃ»§ÔËĞĞÊ±¼ä³¬¹ı 1 ¸öĞ¡Ê±ÇÒ·ÇËøµÈ´ı»á»°¡£
+# åˆ›å»º MySQLäº‹ä»¶ï¼Œè‡ªåŠ¨æ¸…ç†é•¿æ—¶é—´æ‰§è¡Œçš„æŸ¥è¯¢ã€‚
+## æ¯”å¦‚ä¸‹é¢çš„ä»£ç ä¼šæ¯ 5 åˆ†é’Ÿæ¸…ç†ä¸€æ¬¡å½“å‰ç”¨æˆ·è¿è¡Œæ—¶é—´è¶…è¿‡ 1 ä¸ªå°æ—¶ä¸”éé”ç­‰å¾…ä¼šè¯ã€‚
 
 create event my_long_running_query_monitor
 on schedule every 5 minute
@@ -186,52 +202,52 @@ begin
   close c_tid;
 end;
 
-# ²é¿´½ø³Ì
+# æŸ¥çœ‹è¿›ç¨‹
 select * from information_schema.processlist;
 
-# ×Ô½¨mysql²é¿´»á»°¶ÔÓ¦µÄÏß³Ì
+# è‡ªå»ºmysqlæŸ¥çœ‹ä¼šè¯å¯¹åº”çš„çº¿ç¨‹
 select thread_id,id,user,host,db,command,time,state,info from information_schema.processlist list,performance_schema.threads t where  list.id=t.processlist_id;
 
 
-# ²é¿´innodbËø³åÍ»
+# æŸ¥çœ‹innodbé”å†²çª
 select * from information_schema.innodb_lock_waits;
 select * from information_schema.innodb_locks;
 
 
 
 
-# ²é¿´innodbÊÂÎñËø³åÍ»Çé¿ö
+# æŸ¥çœ‹innodbäº‹åŠ¡é”å†²çªæƒ…å†µ
 select blocking_trx_id, count(blocking_trx_id) as countnum from (select a.trx_id,a.trx_state,b.requesting_trx_id,b.blocking_trx_id from information_schema.innodb_lock_waits as  b left join information_schema.innodb_trx as a on a.trx_id=b.requesting_trx_id) as t1 group by blocking_trx_id order by  countnum  desc;
 
-# »ñÈ¡µ½innodbÊÂÎñËø³åÍ»µÄÔ­Ê¼id
+# è·å–åˆ°innodbäº‹åŠ¡é”å†²çªçš„åŸå§‹id
 select id from information_schema.processlist,information_schema.innodb_trx  where trx_mysql_thread_id=id and trx_id in (select blocking_trx_id from (select blocking_trx_id, count(blocking_trx_id) as countnum from (select a.trx_id,a.trx_state,b.requesting_trx_id,b.blocking_trx_id from information_schema.innodb_lock_waits as  b left join information_schema.innodb_trx as a on a.trx_id=b.requesting_trx_id) as t1 group by blocking_trx_id order by  countnum desc limit 1) c) ;
 
 
-# ²é¿´µ±Ç°¶ş½øÖÆÈÕÖ¾
+# æŸ¥çœ‹å½“å‰äºŒè¿›åˆ¶æ—¥å¿—
 show master status;
 
-# ²é¿´ËùÓĞµÄbinlogÎÄ¼şÃûºÍÎÄ¼ş´óĞ¡
+# æŸ¥çœ‹æ‰€æœ‰çš„binlogæ–‡ä»¶åå’Œæ–‡ä»¶å¤§å°
 show binary logs;
 show master logs;
 
-# ²é¿´binlogÈÕÖ¾ÖĞ¾ßÌåµÄÊÂ¼ş
+# æŸ¥çœ‹binlogæ—¥å¿—ä¸­å…·ä½“çš„äº‹ä»¶
 show binlog events in 'mastera.000005' from 219 limit 3;
 
-# ²é¿´Ö§³ÖµÄ×Ö·û±àÂëºÍĞ£Ñé¼¯ĞÅÏ¢
+# æŸ¥çœ‹æ”¯æŒçš„å­—ç¬¦ç¼–ç å’Œæ ¡éªŒé›†ä¿¡æ¯
 show character set;
 show character set like 'utf%';
 show collation;
 show collation like 'utf8%'
 
-# ²é¿´µ±Ç°Ê¹ÓÃµÄ±àÂëĞÅÏ¢
+# æŸ¥çœ‹å½“å‰ä½¿ç”¨çš„ç¼–ç ä¿¡æ¯
 
 
-# ²é¿´±íÖĞËùÓĞÁĞµÄĞÅÏ¢
+# æŸ¥çœ‹è¡¨ä¸­æ‰€æœ‰åˆ—çš„ä¿¡æ¯
 show full columns from user from mysql;
 show full columns from user from mysql like 'user';
 show full columns from user from mysql where field='user';
 
-# ²é¿´¶ÔÏó£¨¿â¡¢±í¡¢º¯Êı¡¢´æ´¢¹ı³Ì¡¢±í¡¢´¥·¢Æ÷¡¢ÊÓÍ¼£©ĞÅÏ¢
+# æŸ¥çœ‹å¯¹è±¡ï¼ˆåº“ã€è¡¨ã€å‡½æ•°ã€å­˜å‚¨è¿‡ç¨‹ã€è¡¨ã€è§¦å‘å™¨ã€è§†å›¾ï¼‰ä¿¡æ¯
 SHOW CREATE DATABASE db_name
 SHOW CREATE EVENT event_name
 SHOW CREATE FUNCTION func_name
@@ -240,11 +256,11 @@ SHOW CREATE TABLE tbl_name
 SHOW CREATE TRIGGER trigger_name
 SHOW CREATE VIEW view_name
 
-# ²é¿´¿âÃû
-show databases like 'mysql'£»
+# æŸ¥çœ‹åº“å
+show databases like 'mysql'ï¼›
 
 
-# ²é¿´´æ´¢ÒıÇæµÄ×´Ì¬
+# æŸ¥çœ‹å­˜å‚¨å¼•æ“çš„çŠ¶æ€
 show engine innodb status\G;
 
 SHOW ENGINE engine_name {STATUS | MUTEX}
@@ -279,26 +295,26 @@ like_or_where:
   | WHERE expr
 
 
-# ´ó±íÓÅ»¯
+# å¤§è¡¨ä¼˜åŒ–
 
 
 
-* µÚÒ»ÓÅ»¯sqlºÍË÷Òı£»
+* ç¬¬ä¸€ä¼˜åŒ–sqlå’Œç´¢å¼•ï¼›
 
 
-* µÚ¶ş¼Ó»º´æ£¬memcached,redis£»
+* ç¬¬äºŒåŠ ç¼“å­˜ï¼Œmemcached,redisï¼›
 
 
-* µÚÈıÒÔÉÏ¶¼×öÁËºó£¬»¹ÊÇÂı£¬¾Í×öÖ÷´Ó¸´ÖÆ»òÖ÷Ö÷¸´ÖÆ£¬¶ÁĞ´·ÖÀë£¬¿ÉÒÔÔÚÓ¦ÓÃ²ã×ö£¬Ğ§ÂÊ¸ß£¬Ò²¿ÉÒÔÓÃÈı·½¹¤¾ß£¬ÀıÈç360µÄatlasµÈ£»
+* ç¬¬ä¸‰ä»¥ä¸Šéƒ½åšäº†åï¼Œè¿˜æ˜¯æ…¢ï¼Œå°±åšä¸»ä»å¤åˆ¶æˆ–ä¸»ä¸»å¤åˆ¶ï¼Œè¯»å†™åˆ†ç¦»ï¼Œå¯ä»¥åœ¨åº”ç”¨å±‚åšï¼Œæ•ˆç‡é«˜ï¼Œä¹Ÿå¯ä»¥ç”¨ä¸‰æ–¹å·¥å…·ï¼Œä¾‹å¦‚360çš„atlasç­‰ï¼›
 
 
-* µÚËÄÈç¹ûÒÔÉÏ¶¼×öÁË»¹ÊÇÂı£¬Ê¹ÓÃmysql×Ô´øµÄ·ÖÇø±í£»
+* ç¬¬å››å¦‚æœä»¥ä¸Šéƒ½åšäº†è¿˜æ˜¯æ…¢ï¼Œä½¿ç”¨mysqlè‡ªå¸¦çš„åˆ†åŒºè¡¨ï¼›
 
 
-* µÚÎåÈç¹ûÒÔÉÏ¶¼×öÁË£¬ÄÇ¾ÍÏÈ×ö´¹Ö±²ğ·Ö£¬¸ù¾İÄãÄ£¿éµÄñîºÏ¶È£¬½«Ò»¸ö´óµÄÏµÍ³·ÖÎª¶à¸öĞ¡µÄÏµÍ³£¬Ò²¾ÍÊÇ·Ö²¼Ê½ÏµÍ³£»
+* ç¬¬äº”å¦‚æœä»¥ä¸Šéƒ½åšäº†ï¼Œé‚£å°±å…ˆåšå‚ç›´æ‹†åˆ†ï¼Œæ ¹æ®ä½ æ¨¡å—çš„è€¦åˆåº¦ï¼Œå°†ä¸€ä¸ªå¤§çš„ç³»ç»Ÿåˆ†ä¸ºå¤šä¸ªå°çš„ç³»ç»Ÿï¼Œä¹Ÿå°±æ˜¯åˆ†å¸ƒå¼ç³»ç»Ÿï¼›
 
 * 
-µÚÁù²ÅÊÇË®Æ½ÇĞ·Ö£¬Õë¶ÔÊı¾İÁ¿´óµÄ±í£¬ÕâÒ»²½×îÂé·³£¬×îÄÜ¿¼Ñé¼¼ÊõË®Æ½£¬ÒªÑ¡ÔñÒ»¸öºÏÀíµÄsharding key,ÎªÁËÓĞºÃµÄ²éÑ¯Ğ§ÂÊ£¬±í½á¹¹Ò²Òª¸Ä¶¯£¬×öÒ»¶¨µÄÈßÓà£¬Ó¦ÓÃÒ²Òª¸Ä£¬sqlÖĞ¾¡Á¿´øsharding key£¬½«Êı¾İ¶¨Î»µ½ÏŞ¶¨µÄ±íÉÏÈ¥²é£¬¶ø²»ÊÇÉ¨ÃèÈ«²¿µÄ±í£»
+ç¬¬å…­æ‰æ˜¯æ°´å¹³åˆ‡åˆ†ï¼Œé’ˆå¯¹æ•°æ®é‡å¤§çš„è¡¨ï¼Œè¿™ä¸€æ­¥æœ€éº»çƒ¦ï¼Œæœ€èƒ½è€ƒéªŒæŠ€æœ¯æ°´å¹³ï¼Œè¦é€‰æ‹©ä¸€ä¸ªåˆç†çš„sharding key,ä¸ºäº†æœ‰å¥½çš„æŸ¥è¯¢æ•ˆç‡ï¼Œè¡¨ç»“æ„ä¹Ÿè¦æ”¹åŠ¨ï¼Œåšä¸€å®šçš„å†—ä½™ï¼Œåº”ç”¨ä¹Ÿè¦æ”¹ï¼Œsqlä¸­å°½é‡å¸¦sharding keyï¼Œå°†æ•°æ®å®šä½åˆ°é™å®šçš„è¡¨ä¸Šå»æŸ¥ï¼Œè€Œä¸æ˜¯æ‰«æå…¨éƒ¨çš„è¡¨ï¼›
 
 
 # killecshopallsessions.sh 
@@ -307,7 +323,7 @@ like_or_where:
 kille_requesting_trx_id.sh 
 ============================================
 #!/bin/bash
-# killµô ecshoptest¿âÖĞÊÂÎñ×´Ì¬Îªlock waitµÄ»á»°id 
+# killæ‰ ecshopteståº“ä¸­äº‹åŠ¡çŠ¶æ€ä¸ºlock waitçš„ä¼šè¯id 
 user=yaoli
 password=
 host=rdsiiavyfvbqnnbi.mysql.rds.aliyuncs.com
@@ -319,7 +335,7 @@ mysql -u$user -p$password -h$host  -P$port  < testfile
 kille_blocking_trx_id.sh 
 ============================================
 #!/bin/bash
-# killµô ecshoptest¿âÖĞµÄµ¼ÖÂlock wait»á»°id
+# killæ‰ ecshopteståº“ä¸­çš„å¯¼è‡´lock waitä¼šè¯id
 user=yaoli
 password=
 host=rdsiiavyfvbqnnbi.mysql.rds.aliyuncs.com
@@ -331,27 +347,27 @@ awk '{if (NR != 1) print $0 }' tmpfile | mysql -u$user -p$password -h$host  -P$p
 
 
 
-# ÊôÓÚÄ³¸ö¿âµÄ»á»°
-select id from information_schema.processlist where db='ecshoptest'£»
+# å±äºæŸä¸ªåº“çš„ä¼šè¯
+select id from information_schema.processlist where db='ecshoptest'ï¼›
 
-# Ö´ĞĞÃüÁîÎªsleep»òÕßquery
-select id from information_schema.processlist where command='sleep'£»
+# æ‰§è¡Œå‘½ä»¤ä¸ºsleepæˆ–è€…query
+select id from information_schema.processlist where command='sleep'ï¼›
 
-# »á»°Ê±¼ä³¬¹ı¶àÉÙÃëµÄµÄ
+# ä¼šè¯æ—¶é—´è¶…è¿‡å¤šå°‘ç§’çš„çš„
 select id from information_schema.processlist where time>5000;
 
-# ÕÒµ½ecshoptest¿âÖĞÊÂÎñ×´Ì¬ÎªlockµÄ»á»°id
+# æ‰¾åˆ°ecshopteståº“ä¸­äº‹åŠ¡çŠ¶æ€ä¸ºlockçš„ä¼šè¯id
 select  id from information_schema.processlist,information_schema.innodb_trx where trx_mysql_thread_id=id and trx_state like 'LOCK%' and db='ecshoptest';
 
-# ËùÓĞµÄ»á»°id
-select  id from information_schema.processlist£»
+# æ‰€æœ‰çš„ä¼šè¯id
+select  id from information_schema.processlistï¼›
 
-# ÊôÓÚÄ³¸öÓÃ»§µÄ»á»°
-select id from information_schema.processlist where user='yaoli'£»
+# å±äºæŸä¸ªç”¨æˆ·çš„ä¼šè¯
+select id from information_schema.processlist where user='yaoli'ï¼›
 
 
 #!/bin/bash
-# killµô ËùÓĞ»á»°
+# killæ‰ æ‰€æœ‰ä¼šè¯
 user=xxx
 password=xxx
 host=xxxx.mysql.rds.aliyuncs.com
@@ -361,21 +377,21 @@ mysql -u$user -p$password -h$host  -P$port -e "select  concat('KILL ',id,';') fr
 
 awk '{if (NR != 1) print $0 }' tmpfile | mysql -u$user -p$password -h$host  -P$port
 
-# Âı²éÑ¯·ÖÎö
+# æ…¢æŸ¥è¯¢åˆ†æ
 mysqldumpslow -s c -t 10 slow-query.log
 
-¾ßÌå²ÎÊıÉèÖÃÈçÏÂ£º
+å…·ä½“å‚æ•°è®¾ç½®å¦‚ä¸‹ï¼š
 
--s ±íÊ¾°´ºÎÖÖ·½Ê½ÅÅĞò£¬c¡¢t¡¢l¡¢r·Ö±ğÊÇ°´ÕÕ¼ÇÂ¼´ÎÊı¡¢Ê±¼ä¡¢²éÑ¯Ê±¼ä¡¢·µ»ØµÄ¼ÇÂ¼ÊıÀ´ÅÅĞò£¬ac¡¢at¡¢al¡¢ar£¬±íÊ¾ÏàÓ¦µÄµ¹Ğğ£»
+-s è¡¨ç¤ºæŒ‰ä½•ç§æ–¹å¼æ’åºï¼Œcã€tã€lã€råˆ†åˆ«æ˜¯æŒ‰ç…§è®°å½•æ¬¡æ•°ã€æ—¶é—´ã€æŸ¥è¯¢æ—¶é—´ã€è¿”å›çš„è®°å½•æ•°æ¥æ’åºï¼Œacã€atã€alã€arï¼Œè¡¨ç¤ºç›¸åº”çš„å€’å™ï¼›
 
--t ±íÊ¾topµÄÒâË¼£¬ºóÃæ¸ú×ÅµÄÊı¾İ±íÊ¾·µ»ØÇ°Ãæ¶àÉÙÌõ£»
+-t è¡¨ç¤ºtopçš„æ„æ€ï¼Œåé¢è·Ÿç€çš„æ•°æ®è¡¨ç¤ºè¿”å›å‰é¢å¤šå°‘æ¡ï¼›
 
--g ºóÃæ¿ÉÒÔĞ´ÕıÔò±í´ïÊ½Æ¥Åä£¬´óĞ¡Ğ´²»Ãô¸Ğ¡£
+-g åé¢å¯ä»¥å†™æ­£åˆ™è¡¨è¾¾å¼åŒ¹é…ï¼Œå¤§å°å†™ä¸æ•æ„Ÿã€‚
 
 
-#×Ö·û¼¯
+#å­—ç¬¦é›†
 
-#¼ì²é¿âµÄ×Ö·û¼¯ºÍ×Ö·ûĞ£Ñé¹æÔò
+#æ£€æŸ¥åº“çš„å­—ç¬¦é›†å’Œå­—ç¬¦æ ¡éªŒè§„åˆ™
 SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA S
 WHERE schema_name = 'confluence_vpc'
 AND 
@@ -385,7 +401,7 @@ OR
 DEFAULT_COLLATION_NAME != 'utf8_bin'
 );
 
-#¼ì²é±íµÄ×Ö·û¼¯ºÍ×Ö·ûĞ£Ñé¹æÔò
+#æ£€æŸ¥è¡¨çš„å­—ç¬¦é›†å’Œå­—ç¬¦æ ¡éªŒè§„åˆ™
 SELECT T.TABLE_NAME, C.CHARACTER_SET_NAME, C.COLLATION_NAME
 FROM information_schema.TABLES AS T, information_schema.COLLATION_CHARACTER_SET_APPLICABILITY AS C
 WHERE C.collation_name = T.table_collation
@@ -397,7 +413,7 @@ OR
 C.COLLATION_NAME != 'utf8_bin'
 );
 
-#¼ì²éÁĞµÄ×Ö·û¼¯ºÍ×Ö·ûĞ£Ñé¹æÔò
+#æ£€æŸ¥åˆ—çš„å­—ç¬¦é›†å’Œå­—ç¬¦æ ¡éªŒè§„åˆ™
 SELECT TABLE_NAME, COLUMN_NAME, CHARACTER_SET_NAME, COLLATION_NAME
 FROM information_schema.COLUMNS 
 WHERE TABLE_SCHEMA = 'confluence_vpc' 
@@ -408,7 +424,7 @@ OR
 COLLATION_NAME != 'utf8_bin'
 );
 
-#ĞŞ¸ÄÁĞµÄ×Ö·ûĞ£Ñé¹æÔò
+#ä¿®æ”¹åˆ—çš„å­—ç¬¦æ ¡éªŒè§„åˆ™
 SELECT CONCAT('ALTER TABLE `', table_name, '` MODIFY `', column_name, '` ', DATA_TYPE, '(', CHARACTER_MAXIMUM_LENGTH, ') CHARACTER SET UTF8 COLLATE utf8_bin', (CASE WHEN IS_NULLABLE = 'NO' THEN ' NOT NULL' ELSE '' END), ';')
 FROM information_schema.COLUMNS 
 WHERE TABLE_SCHEMA = 'confluence_vpc' 
