@@ -2,15 +2,15 @@
 
 [TOC]
 
-[RDS for MySQL Online DDL 使用 ](https://help.aliyun.com/knowledge_detail/41733.html)
-[RDS for MySQL 如何使用 Percona Toolkit](https://help.aliyun.com/knowledge_detail/41734.html)
-[RDS for MySQL 只读实例同步延迟原因与处理](https://help.aliyun.com/knowledge_detail/41767.html)
-[大表上新增字段问题－－相关解决方案](http://blog.csdn.net/sollion/article/details/6095931)
-[只读实例简介]( https://help.aliyun.com/document_detail/26136.html?spm=5176.2020520104.200.7.75e47270RwLjA7)
-[Online DDL与pt-online-schema-change](http://www.cnblogs.com/zengkefu/p/5671661.html)
-[ONLINE DDL VS PT-ONLINE-SCHEMA-CHANGE](http://www.fromdual.com/online-ddl_vs_pt-online-schema-change)
+* [RDS for MySQL Online DDL 使用 ](https://help.aliyun.com/knowledge_detail/41733.html)
+* [RDS for MySQL 如何使用 Percona Toolkit](https://help.aliyun.com/knowledge_detail/41734.html)
+* [RDS for MySQL 只读实例同步延迟原因与处理](https://help.aliyun.com/knowledge_detail/41767.html)
+* [大表上新增字段问题－－相关解决方案](http://blog.csdn.net/sollion/article/details/6095931)
+* [只读实例简介]( https://help.aliyun.com/document_detail/26136.html?spm=5176.2020520104.200.7.75e47270RwLjA7)
+* [Online DDL与pt-online-schema-change](http://www.cnblogs.com/zengkefu/p/5671661.html)
+* [ONLINE DDL VS PT-ONLINE-SCHEMA-CHANGE](http://www.fromdual.com/online-ddl_vs_pt-online-schema-change)
 
-[RDS最佳实践(五)—Mysql大字段的频繁更新导致binlog暴增](https://m.th7.cn/show/51/201408/66846.html)
+* [RDS最佳实践(五)—Mysql大字段的频繁更新导致binlog暴增](https://m.th7.cn/show/51/201408/66846.html)
 
 ## **pt-online-schema-change介绍**
 
@@ -137,3 +137,34 @@ mysql> show index from booboo;
 2 rows in set (0.00 sec)
 ```
 
+## 参数细节
+
+* --no-version-check 解决PT与RDS版本兼容问题
+* --nocheck-unique-key-change 解决添加unique索引不执行问题
+
+## 脚本
+
+```shell
+#!/bin/bash
+host=
+port=3306
+dbname=
+user=
+password=
+ 
+ 
+table=t1
+pt-online-schema-change --user=${user} --port=${port} --host=${host} --password=${password} --alter="drop index account_idx" D=${dbname},t=${table} --no-version-check --execute
+pt-online-schema-change --user=${user} --port=${port} --host=${host} --password=${password} --alter="add unique index uniq_account(account)" D=${dbname},t=${table} --no-version-check --nocheck-unique-key-change --execute
+ 
+ 
+table=t2
+pt-online-schema-change --user=${user} --port=${port} --host=${host} --password=${password} --alter="drop index idx_userId" D=${dbname},t=${table} --no-version-check --execute
+pt-online-schema-change --user=${user} --port=${port} --host=${host} --password=${password} --alter="add unique index uniq_user_id(user_id)" D=${dbname},t=${table} --no-version-check --nocheck-unique-key-change --execute
+pt-online-schema-change --user=${user} --port=${port} --host=${host} --password=${password} --alter="drop index alphaId_userId" D=${dbname},t=${table} --execute
+pt-online-schema-change --user=${user} --port=${port} --host=${host} --password=${password} --alter="add unique index uniq_alpha_id(alpha_id)" D=${dbname},t=${table} --no-version-check --nocheck-unique-key-change --execute
+ 
+table=t3
+pt-online-schema-change --user=${user} --port=${port} --host=${host} --password=${password} --alter="drop index user_agent_regist_type_idx" D=${dbname},t=${table} --no-version-check --execute
+pt-online-schema-change --user=${user} --port=${port} --host=${host} --password=${password} --alter="add unique index uniq_user_agent(user_id,agent_id)" D=${dbname},t=${table} --no-version-check --nocheck-unique-key-change --execute
+```
