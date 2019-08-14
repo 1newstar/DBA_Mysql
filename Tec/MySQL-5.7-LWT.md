@@ -69,3 +69,7 @@ Bye
 0 S root     16094 15741 16094  0    1  80   0 - 28181 pipe_w 17:29 pts/0    00:00:00 grep --color=auto 18487
 1 S mysql    18180 16706 18487  0   40  80   0 - 1212178 futex_ 7月30 ?     00:02:31 /usr/local/mysql/bin/mysqld --basedir=/alidata/mysql --datadir=/alidata/mysql/data --plugin-dir=/alidata/mysql/lib/plugin --user=mysql --log-error=/alidata/mysql/data/dataerror.log --open-files-limit=65535 --pid-file=/alidata/mysql/data/MySQL-01.pid --socket=/tmp/mysql.sock --port=3306
 ```
+
+
+## 5.6 无法直接查出轻量进程
+
