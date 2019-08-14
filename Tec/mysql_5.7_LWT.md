@@ -73,3 +73,11 @@ Bye
 
 ## 5.6 无法直接查出轻量进程
 
+```bash
+ps -ef|grep mysqld
+top -H -p pid
+gdb attache pid
+> bt
+> f #
+> q
+```
