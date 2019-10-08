@@ -1,3 +1,10 @@
+## 前提
+
+```sql
+grant select on *.* to report@'%' identified by 'Zyadmin@123';
+flush privileges;
+```
+
 # SQL质量
 
 ```sql
