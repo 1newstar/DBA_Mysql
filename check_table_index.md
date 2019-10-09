@@ -2,6 +2,7 @@
 
 ```sql
 grant select on *.* to report@'%' identified by 'Zyadmin@123';
+grant replication client on *.* to report@'%' identified by 'Zyadmin@123';
 flush privileges;
 ```
 
