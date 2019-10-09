@@ -107,7 +107,7 @@ FROM
     FROM
         information_schema.tables
     WHERE
-        table_schema NOT IN ('mysql' , 'performance_schema', 'information_schema')
+        table_schema NOT IN ('mysql' , 'performance_schema', 'information_schema', 'sys')
         ) t
         join (
         select sum((data_length + index_length)) as all_length_B from information_schema.tables
@@ -131,7 +131,7 @@ SELECT
 FROM
     information_schema.tables
 WHERE
-    table_schema NOT IN ('information_schema' , 'mysql', 'performance_schema')
+    table_schema NOT IN ('information_schema' , 'mysql', 'performance_schema', 'sys')
 ORDER BY rate_data_free DESC
 LIMIT 5;
 
@@ -216,20 +216,34 @@ ORDER BY data_length_MB DESC , index_length_MB DESC;
 
 # 表空间
 SELECT 
-    table_schema,
-    table_name,
-    (index_length + data_length) total_length,
-    table_rows,
-    data_length,
-    index_length,
-    data_free,
-    ROUND(data_free / (index_length + data_length),
-            2) rate_data_free
+    t.table_name 表,
+    t.table_schema 库,
+    t.engine 引擎,
+    t.table_length_B 表空间,
+    t.table_length_B/t1.all_length_B 表空间占比,
+    t.data_length_B 数据空间,
+    t.index_length_B 索引空间,
+    t.table_rows 行数,
+    t.avg_row_length_B 平均行长KB
 FROM
-    information_schema.tables
-WHERE
-    table_schema NOT IN ('information_schema' , 'mysql', 'performance_schema')
-ORDER BY total_length DESC;
+    (
+    SELECT 
+        table_name,
+            table_schema,
+            ENGINE,
+            table_rows,
+            data_length +  index_length AS table_length_B,
+            data_length AS data_length_B,
+            index_length AS index_length_B,
+            AVG_ROW_LENGTH AS avg_row_length_B
+    FROM
+        information_schema.tables
+    WHERE
+        table_schema NOT IN ('mysql' , 'performance_schema', 'information_schema', 'sys')
+        ) t
+        join (
+        select sum((data_length + index_length)) as all_length_B from information_schema.tables
+        ) t1
 ```
 
 
