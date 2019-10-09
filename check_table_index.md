@@ -5,6 +5,7 @@ grant select on *.* to report@'%' identified by 'Zyadmin@123';
 grant replication client on *.* to report@'%' identified by 'Zyadmin@123';
 flush privileges;
 ```
+如果是RDS，必须使用高权限账号进行授权。
 
 # SQL质量
 
