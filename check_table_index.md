@@ -23,28 +23,28 @@ SELECT
     *
 FROM
     (SELECT 
-        (DIGEST_TEXT) AS query,
-            SCHEMA_NAME AS db,
+        (DIGEST_TEXT) AS query, # SQL语句
+            SCHEMA_NAME AS db, # 数据库
             IF(SUM_NO_GOOD_INDEX_USED > 0
-                OR SUM_NO_INDEX_USED > 0, '*', '') AS full_scan,
-            COUNT_STAR AS exec_count,
-            SUM_ERRORS AS err_count,
-            SUM_WARNINGS AS warn_count,
-            (SUM_TIMER_WAIT) AS total_latency,
-            (MAX_TIMER_WAIT) AS max_latency,
-            (AVG_TIMER_WAIT) AS avg_latency,
-            (SUM_LOCK_TIME) AS lock_latency,
-            FORMAT(SUM_ROWS_SENT, 0) AS rows_sent,
-            ROUND(IFNULL(SUM_ROWS_SENT / NULLIF(COUNT_STAR, 0), 0)) AS rows_sent_avg,
-            SUM_ROWS_EXAMINED AS rows_examined,
-            ROUND(IFNULL(SUM_ROWS_EXAMINED / NULLIF(COUNT_STAR, 0), 0)) AS rows_examined_avg,
-            SUM_CREATED_TMP_TABLES AS tmp_tables,
-            SUM_CREATED_TMP_DISK_TABLES AS tmp_disk_tables,
-            SUM_SORT_ROWS AS rows_sorted,
-            SUM_SORT_MERGE_PASSES AS sort_merge_passes,
-            DIGEST AS digest,
-            FIRST_SEEN AS first_seen,
-            LAST_SEEN AS last_seen
+                OR SUM_NO_INDEX_USED > 0, '*', '') AS full_scan, # 全表扫描总数
+            COUNT_STAR AS exec_count, # 事件总计
+            SUM_ERRORS AS err_count, # 错误总计
+            SUM_WARNINGS AS warn_count, # 警告总计
+            (SUM_TIMER_WAIT) AS total_latency, # 总的等待时间
+            (MAX_TIMER_WAIT) AS max_latency, # 最大等待时间
+            (AVG_TIMER_WAIT) AS avg_latency, # 平均等待时间
+            (SUM_LOCK_TIME) AS lock_latency, # 锁时间总时长
+            FORMAT(SUM_ROWS_SENT, 0) AS rows_sent, # 总返回行数
+            ROUND(IFNULL(SUM_ROWS_SENT / NULLIF(COUNT_STAR, 0), 0)) AS rows_sent_avg, # 平均返回行数
+            SUM_ROWS_EXAMINED AS rows_examined, # 总扫描行数
+            ROUND(IFNULL(SUM_ROWS_EXAMINED / NULLIF(COUNT_STAR, 0), 0)) AS rows_examined_avg, # 平均扫描行数
+            SUM_CREATED_TMP_TABLES AS tmp_tables, # 创建临时表的总数
+            SUM_CREATED_TMP_DISK_TABLES AS tmp_disk_tables, # 创建磁盘临时表的总数
+            SUM_SORT_ROWS AS rows_sorted, # 排序总行数
+            SUM_SORT_MERGE_PASSES AS sort_merge_passes, # 归并排序总行数
+            DIGEST AS digest, # 对SQL_TEXT做MD5产生的32位字符串
+            FIRST_SEEN AS first_seen, # 第一次执行时间
+            LAST_SEEN AS last_seen # 最后一次执行时间
     FROM
         performance_schema.events_statements_summary_by_digest d) t1
 WHERE
