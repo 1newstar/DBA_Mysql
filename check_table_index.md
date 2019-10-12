@@ -1,7 +1,8 @@
 ## 前提
 
 ```sql
-grant select on *.* to report@'%' identified by 'Zyadmin@123';
+grant select on `mysql`.* to zyreport@'%' identified by 'Zyadmin@123';
+grant select on `performance_schema`.* to zyreport@'%' identified by 'Zyadmin@123';
 grant replication client on *.* to report@'%' identified by 'Zyadmin@123';
 flush privileges;
 ```
