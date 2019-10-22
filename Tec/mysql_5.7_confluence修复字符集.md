@@ -10,10 +10,10 @@
 
 如果你使用的 PostgreSQL 数据库，最好的办法是重新创建你的数据库。
 
-请参考 [Database Setup for PostgreSQL](https://www.cwiki.us/display/CONFLUENCEWIKI/Database Setup for PostgreSQL) 页面中的内容来如何创建的数据库，并且使用正确的字符集。请参考 [Migrating to Another Database](https://www.cwiki.us/display/CONFLUENCEWIKI/Migrating to Another Database) 页面中的内容来对数据库进行合并。
+请参考 [Database Setup for PostgreSQL](https://www.cwiki.us/display/CONFLUENCEWIKI/Database+Setup+for+PostgreSQL) 页面中的内容来如何创建的数据库，并且使用正确的字符集。请参考 [Migrating to Another Database](https://www.cwiki.us/display/CONFLUENCEWIKI/Migrating+to+Another+Database) 页面中的内容来对数据库进行合并。
 
 ### Oracle
 
 如果你使用的 Oracle 数据库，最好的办法是重新创建你的数据库。
 
-请参考 [Database Setup for Oracle](https://www.cwiki.us/display/CONFLUENCEWIKI/Database Setup for Oracle) 页面中的内容来如何创建的数据库，并且使用正确的字符集。请参考 [Migrating to Another Database](https://www.cwiki.us/display/CONFLUENCEWIKI/Migrating to Another Database) 页面中的内容来对数据库进行合并。
+请参考 [Database Setup for Oracle](https://www.cwiki.us/display/CONFLUENCEWIKI/Database+Setup+for+Oracle) 页面中的内容来如何创建的数据库，并且使用正确的字符集。请参考 [Migrating to Another Database](https://www.cwiki.us/display/CONFLUENCEWIKI/Migrating+to+Another+Database) 页面中的内容来对数据库进行合并。
