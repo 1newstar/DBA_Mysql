@@ -13,7 +13,7 @@ C.CHARACTER_SET_NAME != 'utf8mb4'
 OR
 C.COLLATION_NAME != 'utf8mb4_unicode_ci'
 );
-
+```
 
 ### 生成修改字符集的命令
 
