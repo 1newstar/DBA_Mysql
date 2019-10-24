@@ -141,3 +141,35 @@ aliyun_root@MySQL-01 10:56:  [(none)]> select thread_id,threads.name,sum(count_s
 |      3280 | thread/sql/slave_worker |       5326 |  315940630825956 |
 +-----------+-------------------------+------------+------------------+
 ```
+
+
+## 加速从库重演
+
+```sql
+set global innodb_flush_log_at_trx_commit=0;
+set global sync_binlog=0;
+```
+
+```bash
+aliyun_root@MySQL-01 11:10:  [(none)]> set global innodb_flush_log_at_trx_commit=0;
+Query OK, 0 rows affected (0.00 sec)
+
+aliyun_root@MySQL-01 11:10:  [(none)]> set global sync_binlog=0;
+Query OK, 0 rows affected (0.00 sec)
+
+aliyun_root@MySQL-01 11:10:  [(none)]> show global variables like 'innodb_flush_log_at_trx_commit';
++--------------------------------+-------+
+| Variable_name                  | Value |
++--------------------------------+-------+
+| innodb_flush_log_at_trx_commit | 0     |
++--------------------------------+-------+
+1 row in set (0.01 sec)
+
+aliyun_root@MySQL-01 11:10:  [(none)]> show global variables like 'sync_binlog';
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| sync_binlog   | 0     |
++---------------+-------+
+1 row in set (0.00 sec)
+```
