@@ -1,3 +1,12 @@
+## 主从检查
+
+select thread_id,threads.name,sum(count_star) as totalCount, sum(sum_timer_wait) as TotalTime
+from
+performance_schema.events_waits_summary_by_thread_by_event_name
+inner join performance_schema.threads using (thread_id)
+where threads.name like 'thread/sql/slave\_%'
+group by thread_id,threads.name;
+
 # 查看存储过程
 select name from mysql.proc where db='joowingdw';
 
