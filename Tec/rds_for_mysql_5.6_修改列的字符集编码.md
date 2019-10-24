@@ -1,5 +1,12 @@
 ## 命令准备
 
+# 修改库的字符编码和校验码，RDS控制台刷新后自动变更
+ALTER DATABASE db1 CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+# 修改表的字符集和校验码
+ALTER TABLE t1 CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+# 修改表后，字段自动变更
+
+
 ### 查看指定数据库字符集明细
 
 ```sql
