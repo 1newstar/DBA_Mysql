@@ -190,21 +190,20 @@ ORDER BY object_schema , object_name;
 
 # 冗余索引
 SELECT 
-    a.TABLE_SCHEMA AS '数据名',
-    a.TABLE_NAME AS '表名',
-    a.INDEX_NAME AS '索引1',
-    b.INDEX_NAME AS '索引2',
-    a.COLUMN_NAME AS '重复列名'
+   a.TABLE_SCHEMA AS '数据名',
+   a.TABLE_NAME AS '表名',
+   group_concat(a.INDEX_NAME,b.INDEX_NAME) AS '重复索引',
+   a.COLUMN_NAME AS '重复列名'
 FROM
-    information_schema.STATISTICS a
+   information_schema.STATISTICS a
         JOIN
-    information_schema.STATISTICS b ON a.TABLE_SCHEMA = b.TABLE_SCHEMA
+   information_schema.STATISTICS b ON a.TABLE_SCHEMA = b.TABLE_SCHEMA
         AND a.TABLE_NAME = b.TABLE_NAME
         AND a.SEQ_IN_INDEX = b.SEQ_IN_INDEX
         AND a.COLUMN_NAME = b.COLUMN_NAME
 WHERE
-    a.SEQ_IN_INDEX = 1
-        AND a.INDEX_NAME <> b.INDEX_NAME;
+   a.SEQ_IN_INDEX = 1
+        AND a.INDEX_NAME <> b.INDEX_NAME group by a.TABLE_SCHEMA,a.TABLE_NAME,a.COLUMN_NAME;
 ```
 
 # 空间统计
