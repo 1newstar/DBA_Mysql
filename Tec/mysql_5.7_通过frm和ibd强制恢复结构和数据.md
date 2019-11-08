@@ -14,6 +14,8 @@ Crash恢复的正确方式是：**备份文件（逻辑或物理）+ binlog**进
 
 ## 强制还原步骤
 
+**强制恢复表结构，MySQL官方提供了一个工具直接离线获取ddl mysqlfrm**
+
 | 步骤 | 描述                                                         | 备注                                                         |
 | ---- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | 1    | **创建同版本的MySQL服务实例一枚**                            |                                                              |
@@ -737,3 +739,34 @@ if __name__ == '__main__':
     mysql_tools('/alidata/cy_table.txt').import_table_test('/alidata/cy_sql6.sql')
 ```
 
+## mysqlfrm 测试使用
+
+[mysqlfrm官方文档](https://docs.oracle.com/cd/E17952_01/mysql-utilities-1.4-en/mysqlfrm.html)
+
+```sql
+[root@build-center alidata]# /etc/init.d/mysqld stop
+Shutting down MySQL..                                      [  OK  ]
+[root@build-center alidata]# mysqlfrm --diagnostic /alidata/mysql/data/booboo/
+# WARNING: Cannot generate character set or collation names without the --server option.
+# CAUTION: The diagnostic mode is a best-effort parse of the .frm file. As such, it may not identify all of the components of the table correctly. This is especially true for damaged files. It will also not read the default values for the columns and the resulting statement may not be syntactically correct.
+# Reading .frm file for /alidata/mysql/data/booboo/qinxi.frm:
+# The .frm file is a TABLE.
+# CREATE TABLE Statement:
+
+CREATE TABLE `booboo`.`qinxi` (
+  `id` int(11) DEFAULT NULL, 
+  `name` varchar(200) DEFAULT NULL 
+) ENGINE=InnoDB;
+
+# Reading .frm file for /alidata/mysql/data/booboo/qinxi1.frm:
+# The .frm file is a TABLE.
+# CREATE TABLE Statement:
+
+CREATE TABLE `booboo`.`qinxi1` (
+  `id` int(11) NOT NULL, 
+  `col` int(11) NOT NULL, 
+PRIMARY KEY `PRIMARY` (`id`,`col`)
+) ENGINE=INNODB  PARTITION BY RANGE (col) (PARTITION p1 VALUES LESS THAN (10) ENGINE = InnoDB,  PARTITION p2 VALUES LESS THAN (20) ENGINE = InnoDB);
+
+#...done.
+```
