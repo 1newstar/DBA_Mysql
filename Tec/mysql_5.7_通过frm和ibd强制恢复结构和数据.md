@@ -771,3 +771,89 @@ PRIMARY KEY `PRIMARY` (`id`,`col`)
 
 #...done.
 ```
+
+
+# 5.7下分区表的恢复
+
+```sql
+--模拟生产环境数据
+root@MySQL-01 21:04:  [(none)]> use booboo
+Database changed
+root@MySQL-01 21:04:  [booboo]> show tables;
++------------------+
+| Tables_in_booboo |
++------------------+
+| t1               |
++------------------+
+1 row in set (0.00 sec)
+
+root@MySQL-01 21:04:  [booboo]> show create table t1\G;
+*************************** 1. row ***************************
+       Table: t1
+Create Table: CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `col1` int(11) NOT NULL,
+  PRIMARY KEY (`id`,`col1`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+/*!50100 PARTITION BY RANGE (col1)
+(PARTITION p100 VALUES LESS THAN (100) ENGINE = InnoDB,
+ PARTITION p101 VALUES LESS THAN (200) ENGINE = InnoDB) */
+1 row in set (0.01 sec)
+
+ERROR: 
+No query specified
+
+root@MySQL-01 21:04:  [booboo]> select * from t1;
++----+------+
+| id | col1 |
++----+------+
+|  1 |   99 |
+|  2 |  199 |
++----+------+
+2 rows in set (0.00 sec)
+
+
+--模拟恢复
+root@MySQL-01 21:11:  [booboo]> show tables;
++------------------+
+| Tables_in_booboo |
++------------------+
+| t1               |
++------------------+
+1 row in set (0.00 sec)
+
+root@MySQL-01 21:11:  [booboo]> alter table t1 discard tablespace;
+Query OK, 0 rows affected (0.02 sec)
+
+
+[root@tick:/alidata/mysql/data_booboo/booboo]# cp /alidata/mysql/data/booboo/t1*.ibd ./ -rp
+[root@tick:/alidata/mysql/data_booboo/booboo]# ll
+total 208
+-rw-r----- 1 mysql mysql    67 Nov  8 00:35 db.opt
+-rw-r----- 1 mysql mysql  8586 Nov  9 21:10 t1.frm
+-rw-r----- 1 mysql mysql 98304 Nov  8 00:29 t1#P#p100.ibd
+-rw-r----- 1 mysql mysql 98304 Nov  8 00:29 t1#P#p101.ibd
+
+root@MySQL-01 21:19:  [booboo]> show tables;
++------------------+
+| Tables_in_booboo |
++------------------+
+| t1               |
++------------------+
+1 row in set (0.00 sec)
+
+root@MySQL-01 21:19:  [booboo]> alter table t1 import tablespace;
+Query OK, 0 rows affected, 3 warnings (0.09 sec)
+
+
+root@MySQL-01 21:20:  [booboo]> select * from t1;
++----+------+
+| id | col1 |
++----+------+
+|  1 |   99 |
+|  2 |  199 |
++----+------+
+2 rows in set (0.00 sec)
+
+
+```
