@@ -1,4 +1,10 @@
+## 无主键的表
+
+select table_schema,table_name from information_schema.tables where (table_schema,table_name) not in(     select distinct table_schema,table_name from information_schema.columns where COLUMN_KEY='PRI'  ) and  table_schema not in ('mysql','performance_schema','information_schema');
+
 ## 主从检查
+
+
 
 select thread_id,threads.name,sum(count_star) as totalCount, sum(sum_timer_wait) as TotalTime
 from
