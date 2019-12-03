@@ -1,6 +1,7 @@
 ## 无主键的表
 
-select table_schema,table_name from information_schema.tables where (table_schema,table_name) not in(     select distinct table_schema,table_name from information_schema.columns where COLUMN_KEY='PRI'  ) and  table_schema not in ('mysql','performance_schema','information_schema');
+select table_schema,table_name from information_schema.tables where (table_schema,table_name) not in(     select distinct table_schema,table_name from information_schema.columns where COLUMN_KEY='PRI'  ) and  table_schema not in ('mysql','performance_schema','information_schema','booboo') and table_type='BASE TABLE' 
+and table_name not like 'pm_%' and table_name not like 'cloudods_moni%';
 
 ## 主从检查
 
