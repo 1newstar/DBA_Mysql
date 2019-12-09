@@ -1,3 +1,26 @@
+## definer
+
+select ROUTINE_SCHEMA,ROUTINE_NAME,DEFINER from routines;
+select trigger_schema,trigger_name,definer from triggers;
+select table_schema,table_name,definer from views;
+
+
+## 无主键的表
+
+select table_schema,table_name from information_schema.tables where (table_schema,table_name) not in(     select distinct table_schema,table_name from information_schema.columns where COLUMN_KEY='PRI'  ) and  table_schema not in ('mysql','performance_schema','information_schema','booboo') and table_type='BASE TABLE' 
+and table_name not like 'pm_%' and table_name not like 'cloudods_moni%';
+
+## 主从检查
+
+
+
+select thread_id,threads.name,sum(count_star) as totalCount, sum(sum_timer_wait) as TotalTime
+from
+performance_schema.events_waits_summary_by_thread_by_event_name
+inner join performance_schema.threads using (thread_id)
+where threads.name like 'thread/sql/slave\_%'
+group by thread_id,threads.name;
+
 # 查看存储过程
 select name from mysql.proc where db='joowingdw';
 

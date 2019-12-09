@@ -1,3 +1,64 @@
+# 修改RDS For MySQL 5.7 字符集
+
+## 修改库的字符编码和校验码，RDS控制台刷新后自动变更
+
+```sql
+ALTER DATABASE db1 CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+```
+
+# 修改表和列的字符集和校验码
+
+```
+ALTER TABLE t1 CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+```
+
+# 批量生成变更语句
+
+```sql
+SELECT CONCAT('ALTER TABLE ', table_name, ' CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;')
+FROM information_schema.TABLES AS T, information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` AS C
+WHERE C.collation_name = T.table_collation
+AND T.table_schema = 'ecshoptest'
+AND
+(
+ C.CHARACTER_SET_NAME != 'utf8mb4'
+ OR
+ C.COLLATION_NAME != 'utf8mb4_unicode_ci'
+);
+```
+
+# check
+
+```sql
+SELECT table_name, CHARACTER_SET_NAME,COLLATION_NAME
+FROM information_schema.TABLES AS T, information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` AS C
+WHERE C.collation_name = T.table_collation
+AND T.table_schema = 'yourdb'
+AND
+(
+C.CHARACTER_SET_NAME != 'utf8mb4'
+OR
+C.COLLATION_NAME != 'utf8mb4_unicode_ci'
+);
+
+SELECT 
+    table_schema,
+    table_name,
+    COLUMN_NAME,
+    CHARACTER_SET_NAME,
+    COLLATION_NAME
+FROM
+    information_schema.columns
+WHERE
+    table_schema = 'yourdb'
+        AND (CHARACTER_SET_NAME != 'utf8mb4'
+        OR COLLATION_NAME != 'utf8mb4_unicode_ci');
+```
+
+
+## 测试
+
+```sql
 mysql>CREATE TABLE t1(   
 id int primary key auto_increment,    
 uname  varchar(20) ,   
@@ -121,11 +182,5 @@ mysql>show full fields from t3;
 | name            | varchar(244)   | utf8mb4_general_ci  | YES            |               |                   |                 | select,insert,update,references |                   |
 +-----------------+----------------+---------------------+----------------+---------------+-------------------+-----------------+---------------------------------+-------------------+
 返回行数：[2]，耗时：4 ms.
+```
 
-
-
-# 修改库的字符编码和校验码，RDS控制台刷新后自动变更
-ALTER DATABASE db1 CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-# 修改表的字符集和校验码
-ALTER TABLE t1 CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-# 修改表后，字段自动变更
