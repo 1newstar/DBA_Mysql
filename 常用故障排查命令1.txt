@@ -443,3 +443,6 @@ AND
 	OR
 	COLLATION_NAME != 'utf8_bin'
 );
+
+# 统计binlog中操作明细
+mysqlbinlog --no-defaults -v --base64-output=DECODE-ROWS mybinlog.000749 |awk '/###/{if($0~/UPDATE|INSERT|DELETE/)count[$2" "$NF]++}END{for(i in count)print i,"\t",count[i]}'|column -t|sort -k3nr|more
