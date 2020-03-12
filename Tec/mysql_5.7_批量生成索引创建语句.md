@@ -1,16 +1,16 @@
 ```sql
 SELECT 
     concat(
-    'alter talbe ', 
+    'alter talbe `', 
     table_schema,
-    '.',
+    '`.`',
     table_name,
-    ' add ',
+    '` add ',
     index_type,
-    ' index ',
+    ' index `',
 	index_name,
-    ' (',
-    GROUP_CONCAT(column_name),
+    '` (',
+    GROUP_CONCAT(concat('`',column_name,'`')),
     ');'
     )
 FROM
