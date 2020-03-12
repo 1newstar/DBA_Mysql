@@ -1,7 +1,7 @@
 ```sql
 SELECT 
     concat(
-    'alter talbe `', 
+    'alter table `', 
     table_schema,
     '`.`',
     table_name,
