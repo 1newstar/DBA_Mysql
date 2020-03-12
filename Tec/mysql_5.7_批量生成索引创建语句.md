@@ -8,7 +8,7 @@ SELECT
     table_name,
     '` drop index `',
     index_name,
-    ';'
+    '`;'
     )
 FROM
     information_schema.STATISTICS
