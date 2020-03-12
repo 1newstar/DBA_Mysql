@@ -6,7 +6,8 @@ SELECT
     '`.`',
     table_name,
     '` add ',
-    index_type,
+    case when NON_UNIQUE=0 then 'UNIQUE'
+	else '' end,
     ' index `',
 	index_name,
     '` (',
@@ -20,6 +21,8 @@ GROUP BY table_schema , table_name , index_type, index_name;
 
 # 如何保证复合索引的列顺序？
 # GROUP_CONCAT(column_name) 时，按照默认顺序连接，而STATISTICS表中 SEQ_IN_INDEX 记录的信息可以了解到数据库已按照先后顺序排列，因此不用担心乱序。
+# 如何确定是 UNIQUE 还是 非 unique 索引？
+# 通过 NON_UNIQUE=0 判断
 ```
 
 
