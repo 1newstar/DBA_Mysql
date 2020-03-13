@@ -1,54 +1,131 @@
 > 支持的MySQL数据库版本：5.5 5.6 5.7 8.0
 
-<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+<!-- MDTOC maxdepth:6 firsth1:1 numbering:0 flatten:0 bullets:1 updateOnSave:1 -->
 
-- [常用健康检查](#常用健康检查)
-	- [全表扫描的SQL](#全表扫描的sql)
-	- [创建大量临时表的SQL](#创建大量临时表的sql)
-	- [大表(单表行数大于500w，且平均行长大于10KB)](#大表单表行数大于500w且平均行长大于10kb)
-	- [表碎片](#表碎片)
-	- [热点表](#热点表)
-	- [全表扫描的表](#全表扫描的表)
-	- [未使用的索引](#未使用的索引)
-	- [冗余索引](#冗余索引)
-	- [库空间统计](#库空间统计)
-	- [表空间统计](#表空间统计)
-- [常用故障排查](#常用故障排查)
-	- [查看有metalock锁的线程](#查看有metalock锁的线程)
-	- [创建MySQL事件-自动清理长时间执行的查询](#创建mysql事件-自动清理长时间执行的查询)
-	- [查看InnoDB未提交的事务信息](#查看innodb未提交的事务信息)
-	- [查看InnoDB事务锁冲突](#查看innodb事务锁冲突)
-	- [获取到InnoDB事务锁冲突的原始id](#获取到innodb事务锁冲突的原始id)
-- [MySQL Binglog](#mysql-binglog)
-	- [查看有metalock锁的线程](#查看有metalock锁的线程)
-	- [查看当前二进制日志](#查看当前二进制日志)
-	- [查看所有的binlog文件名和文件大小](#查看所有的binlog文件名和文件大小)
-	- [查看binlog日志中具体的事件](#查看binlog日志中具体的事件)
-- [字符集相关](#字符集相关)
-	- [查看支持的字符编码和校验集信息](#查看支持的字符编码和校验集信息)
-	- [检查库的字符集和字符校验规则](#检查库的字符集和字符校验规则)
-	- [检查表的字符集和字符校验规则](#检查表的字符集和字符校验规则)
-	- [检查列的字符集和字符校验规则](#检查列的字符集和字符校验规则)
-	- [修改列的字符校验规则](#修改列的字符校验规则)
-- [会话查询](#会话查询)
-	- [属于某个库的会话](#属于某个库的会话)
-	- [执行命令为sleep的会话](#执行命令为sleep的会话)
-	- [执行命令为query的会话](#执行命令为query的会话)
-	- [会话时间超过多少秒的的](#会话时间超过多少秒的的)
-	- [找到某个库中事务状态为lock的会话id](#找到某个库中事务状态为lock的会话id)
-	- [所有的会话id](#所有的会话id)
-	- [属于某个用户的会话](#属于某个用户的会话)
+- [批处理](#批处理)   
+   - [批量生成删除和创建视图的语句](#批量生成删除和创建视图的语句)   
+   - [批量生成删除和创建索引的语句](#批量生成删除和创建索引的语句)   
+- [常用健康检查](#常用健康检查)   
+   - [全表扫描的SQL](#全表扫描的sql)   
+   - [创建大量临时表的SQL](#创建大量临时表的sql)   
+   - [大表(单表行数大于500w，且平均行长大于10KB)](#大表单表行数大于500w，且平均行长大于10kb)   
+   - [表碎片](#表碎片)   
+   - [热点表](#热点表)   
+   - [全表扫描的表](#全表扫描的表)   
+   - [未使用的索引](#未使用的索引)   
+   - [冗余索引](#冗余索引)   
+   - [库空间统计](#库空间统计)   
+   - [表空间统计](#表空间统计)   
+- [常用故障排查](#常用故障排查)   
+   - [查看有metalock锁的线程](#查看有metalock锁的线程)   
+   - [创建MySQL事件-自动清理长时间执行的查询](#创建mysql事件-自动清理长时间执行的查询)   
+   - [查看InnoDB未提交的事务信息](#查看innodb未提交的事务信息)   
+   - [查看InnoDB事务锁冲突](#查看innodb事务锁冲突)   
+   - [获取到InnoDB事务锁冲突的原始id](#获取到innodb事务锁冲突的原始id)   
+- [MySQL Binglog](#mysql-binglog)   
+   - [查看有metalock锁的线程](#查看有metalock锁的线程)   
+   - [查看当前二进制日志](#查看当前二进制日志)   
+   - [查看所有的binlog文件名和文件大小](#查看所有的binlog文件名和文件大小)   
+   - [查看binlog日志中具体的事件](#查看binlog日志中具体的事件)   
+- [字符集相关](#字符集相关)   
+   - [查看支持的字符编码和校验集信息](#查看支持的字符编码和校验集信息)   
+   - [检查库的字符集和字符校验规则](#检查库的字符集和字符校验规则)   
+   - [检查表的字符集和字符校验规则](#检查表的字符集和字符校验规则)   
+   - [检查列的字符集和字符校验规则](#检查列的字符集和字符校验规则)   
+   - [修改列的字符校验规则](#修改列的字符校验规则)   
+- [会话查询](#会话查询)   
+   - [属于某个库的会话](#属于某个库的会话)   
+   - [执行命令为sleep的会话](#执行命令为sleep的会话)   
+   - [执行命令为query的会话](#执行命令为query的会话)   
+   - [会话时间超过多少秒的的](#会话时间超过多少秒的的)   
+   - [找到某个库中事务状态为lock的会话id](#找到某个库中事务状态为lock的会话id)   
+   - [所有的会话id](#所有的会话id)   
+   - [属于某个用户的会话](#属于某个用户的会话)   
 
-<!-- /TOC -->
+<!-- /MDTOC -->
+
+# 批处理
+
+## 批量生成删除和创建视图的语句
+
+```sql
+--批量生成删除视图语句
+select concat("drop VIEW ",TABLE_SCHEMA,".",TABLE_NAME,";") from information_schema.VIEWS where table_schema in ("xx","xx2");
+
+--批量生成创建视图语句
+select concat("create DEFINER=`zyadmin_dba`@`%` SQL SECURITY INVOKER VIEW ",TABLE_SCHEMA,".",TABLE_NAME," as ",VIEW_DEFINITION,";") from information_schema.VIEWS where table_schema in ("xx","xx2");
+```
+
+## 批量生成删除和创建索引的语句
+
+```SQL
+-- 生成删除索引的SQL
+SELECT
+    concat(
+    'alter table `',
+    table_schema,
+    '`.`',
+    table_name,
+    '` drop index `',
+    index_name,
+    '`;'
+    )
+FROM
+    information_schema.STATISTICS
+    where index_name != 'PRIMARY' and table_schema in ('xx','xx2')
+GROUP BY table_schema , table_name , index_type, index_name;
+
+-- 生成创建索引的SQL
+SELECT
+    concat(
+    'alter table `',
+    table_schema,
+    '`.`',
+    table_name,
+    '` add ',
+    case when NON_UNIQUE=0 then 'UNIQUE'
+	else '' end,
+    ' index `',
+	index_name,
+    '` (',
+    GROUP_CONCAT(concat('`',column_name,'`')),
+    ');'
+    )
+FROM
+    information_schema.STATISTICS
+    where index_name != 'PRIMARY' and table_schema in ('xx','xx2')
+GROUP BY table_schema , table_name , index_type, index_name;
+
+--对比索引信息
+--检查主键是否一致
+SELECT
+table_schema 库名, table_name 表名, index_name 索引名称, index_type 索引类型,NON_UNIQUE 是否唯一,
+GROUP_CONCAT(column_name) 索引使用的列
+FROM
+information_schema.STATISTICS
+where index_name = 'PRIMARY'  and table_schema not in ('mysql','information_schema')
+GROUP BY table_schema , table_name , index_type, index_name,NON_UNIQUE;
+
+
+--检查非主键是否一致
+SELECT
+table_schema 库名, table_name 表名, index_name 索引名称, index_type 索引类型,NON_UNIQUE 是否唯一,
+GROUP_CONCAT(column_name) 索引使用的列
+FROM
+information_schema.STATISTICS
+where index_name = 'PRIMARY' and table_schema not in ('mysql','information_schema')
+GROUP BY table_schema , table_name , index_type, index_name,NON_UNIQUE;
+```
+
 # 常用健康检查
 
 ## 全表扫描的SQL
 
 ```
-SELECT 
+SELECT
     *
 FROM
-    (SELECT 
+    (SELECT
         (DIGEST_TEXT) AS query, # SQL语句
             SCHEMA_NAME AS db, # 数据库
             IF(SUM_NO_GOOD_INDEX_USED > 0
@@ -82,10 +159,10 @@ LIMIT 5;
 ## 创建大量临时表的SQL
 
 ```
-SELECT 
+SELECT
     *
 FROM
-    (SELECT 
+    (SELECT
         (DIGEST_TEXT) AS query, # SQL语句
             SCHEMA_NAME AS db, # 数据库
             IF(SUM_NO_GOOD_INDEX_USED > 0
@@ -114,10 +191,10 @@ ORDER BY t1.tmp_disk_tables DESC
 LIMIT 5;
 ```
 
-## 大表(单表行数大于500w，且平均行长大于10KB)  
+## 大表(单表行数大于500w，且平均行长大于10KB)
 
 ```
-SELECT 
+SELECT
     t.table_name 表,
     t.table_schema 库,
     t.engine 引擎,
@@ -129,7 +206,7 @@ SELECT
     t.avg_row_length_B 平均行长KB
 FROM
     (
-    SELECT 
+    SELECT
             table_name,
             table_schema,
             ENGINE,
@@ -149,13 +226,13 @@ FROM
 WHERE
     t.table_rows > 5000000
         AND t.avg_row_length_B > 10240;
-        
-```
-
-## 表碎片  
 
 ```
-SELECT 
+
+## 表碎片
+
+```
+SELECT
     table_schema, # 库
     table_name, # 表
     (index_length + data_length) total_length, # 表空间
@@ -173,10 +250,10 @@ ORDER BY rate_data_free DESC
 LIMIT 5;
 ```
 
-## 热点表  
+## 热点表
 
 ```
-SELECT 
+SELECT
     object_schema AS table_schema, # 库
     object_name AS table_name, # 表
     count_star AS rows_io_total, # 事件总数
@@ -200,10 +277,10 @@ ORDER BY sum_timer_wait DESC
 LIMIT 5;
 ```
 
-## 全表扫描的表  
+## 全表扫描的表
 
 ```
-SELECT 
+SELECT
     object_schema, # 库
     object_name,  # 表
     count_read AS rows_full_scanned #全表扫描的行数
@@ -215,10 +292,10 @@ ORDER BY count_read DESC
 LIMIT 5;
 ```
 
-## 未使用的索引  
+## 未使用的索引
 
 ```
-SELECT 
+SELECT
     object_schema, # 库
     object_name, # 表
     index_name # 索引名
@@ -237,7 +314,7 @@ ORDER BY object_schema , object_name;
 
 
 ```
-SELECT 
+SELECT
    a.TABLE_SCHEMA AS '数据名',
    a.TABLE_NAME AS '表名',
    group_concat(a.INDEX_NAME,b.INDEX_NAME) AS '重复索引',
@@ -259,7 +336,7 @@ WHERE
 ## 库空间统计
 
 ```
-SELECT 
+SELECT
     table_schema, # 库
     ROUND(SUM(data_length / 1024 / 1024), 2) AS data_length_MB, # 数据空间 单位MB
     ROUND(SUM(index_length / 1024 / 1024), 2) AS index_length_MB # 索引空间 单位MB
@@ -269,10 +346,10 @@ GROUP BY table_schema
 ORDER BY data_length_MB DESC , index_length_MB DESC;
 ```
 
-## 表空间统计  
+## 表空间统计
 
 ```
-SELECT 
+SELECT
     t.table_name 表,
     t.table_schema 库,
     t.engine 引擎,
@@ -284,7 +361,7 @@ SELECT
     t.avg_row_length_B 平均行长KB
 FROM
     (
-    SELECT 
+    SELECT
         table_name,
             table_schema,
             ENGINE,
@@ -308,7 +385,7 @@ FROM
 ##  查看有metalock锁的线程
 
 ```
-SELECT 
+SELECT
    id, State, command
 FROM
    information_schema.processlist
@@ -317,7 +394,7 @@ WHERE
 
 ```
 
-## 创建MySQL事件-自动清理长时间执行的查询 
+## 创建MySQL事件-自动清理长时间执行的查询
 
 比如下面的代码会每 5 分钟清理一次当前用户运行时间超过 1 个小时且非锁等待会话。
 
@@ -331,7 +408,7 @@ begin
 declare v_sql varchar(500);
 declare no_more_long_running_query integer default 0;
 declare c_tid cursor for
-select concat ('kill ',id,';') from 
+select concat ('kill ',id,';') from
 information_schema.processlist
 where time >= 3600
 and user = substring(current_user(),1,instr(current_user(),'@')-1)
@@ -357,7 +434,7 @@ delimiter ;
 ## 查看InnoDB未提交的事务信息
 
 ```
-SELECT 
+SELECT
    TIMEDIFF(SYSDATE(), trx_started) timediff,
    SYSDATE(),
    trx_started,
@@ -378,10 +455,10 @@ WHERE
 ## 查看InnoDB事务锁冲突
 
 ```
-SELECT 
+SELECT
    blocking_trx_id, COUNT(blocking_trx_id) AS countnum
 FROM
-   (SELECT 
+   (SELECT
        a.trx_id,
            a.trx_state,
            b.requesting_trx_id,
@@ -396,20 +473,20 @@ ORDER BY countnum DESC;
 ## 获取到InnoDB事务锁冲突的原始id
 
 ```
-SELECT 
+SELECT
    id
 FROM
    information_schema.processlist,
    information_schema.innodb_trx
 WHERE
    trx_mysql_thread_id = id
-        AND trx_id IN (SELECT 
+        AND trx_id IN (SELECT
            blocking_trx_id
         FROM
-           (SELECT 
+           (SELECT
                blocking_trx_id, COUNT(blocking_trx_id) AS countnum
             FROM
-               (SELECT 
+               (SELECT
                a.trx_id,
                    a.trx_state,
                    b.requesting_trx_id,
@@ -469,7 +546,7 @@ show collation like 'utf8%'
 ```
 SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA S
 WHERE schema_name = 'confluence_vpc'
-AND 
+AND
 (
 DEFAULT_CHARACTER_SET_NAME != 'utf8'
 OR
@@ -484,7 +561,7 @@ SELECT T.TABLE_NAME, C.CHARACTER_SET_NAME, C.COLLATION_NAME
 FROM information_schema.TABLES AS T, information_schema.COLLATION_CHARACTER_SET_APPLICABILITY AS C
 WHERE C.collation_name = T.table_collation
 AND T.table_schema = 'confluence_vpc'
-AND 
+AND
 (
 C.CHARACTER_SET_NAME != 'utf8'
 OR
@@ -496,9 +573,9 @@ C.COLLATION_NAME != 'utf8_bin'
 
 ```
 SELECT TABLE_NAME, COLUMN_NAME, CHARACTER_SET_NAME, COLLATION_NAME
-FROM information_schema.COLUMNS 
-WHERE TABLE_SCHEMA = 'confluence_vpc' 
-AND 
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'confluence_vpc'
+AND
 (
 CHARACTER_SET_NAME != 'utf8'
 OR
@@ -510,9 +587,9 @@ COLLATION_NAME != 'utf8_bin'
 
 ```
 SELECT CONCAT('ALTER TABLE `', table_name, '` MODIFY `', column_name, '` ', DATA_TYPE, '(', CHARACTER_MAXIMUM_LENGTH, ') CHARACTER SET UTF8 COLLATE utf8_bin', (CASE WHEN IS_NULLABLE = 'NO' THEN ' NOT NULL' ELSE '' END), ';')
-FROM information_schema.COLUMNS 
-WHERE TABLE_SCHEMA = 'confluence_vpc' 
-AND 
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'confluence_vpc'
+AND
 (
 CHARACTER_SET_NAME != 'utf8'
 OR
