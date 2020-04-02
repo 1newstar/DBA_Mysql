@@ -22,6 +22,8 @@
 
 <img src='https://i.loli.net/2020/04/02/7FKqRsWiEy49XAt.jpg' alt='7FKqRsWiEy49XAt'/>
 
+<img src='https://i.loli.net/2020/04/02/LWxTvPnqh4m2ptl.jpg' alt='LWxTvPnqh4m2ptl'/>
+
 <img src='https://i.loli.net/2020/04/02/OoxNDi4cmB2zqKI.jpg' alt='OoxNDi4cmB2zqKI'/>
 
 <img src='https://i.loli.net/2020/04/02/g2HyAmlLn49RsWk.jpg' alt='g2HyAmlLn49RsWk'/>
@@ -33,7 +35,7 @@
 
 查询了一下实例审计日志，CPU 升高的时候主要是当时扫缓存逻辑读操作比较多消耗CPU 。当时实例主要innodb 查询扫描比较多。监控趋势增长完全一致
 
-1、SQL 洞察查询  3月27日  下午17:45 到17：55 短时间的SQ了洞察日志可以看到，当时存在扫描行数多的语句（这个不是慢查询） 但是语句执行会扫描相对较多；
+1. SQL 洞察查询  3月27日  下午17:45 到17：55 短时间的SQ了洞察日志可以看到，当时存在扫描行数多的语句（这个不是慢查询） 但是语句执行会扫描相对较多；
 
 压测执行的sql 语句（已脱敏）：
 
@@ -50,8 +52,9 @@ select type_key typeKey, code,cn_name value, description,value as dictValue,en_n
 SELECT count(0) FROM table_3
 ```
 
-2、查询的表如果压测 最好表id 自增主键 使用int 类型的表压测，上边这个表id 主键是`varchar` 类型，您高并发的情况 **字符串主键的表** 性能相对没有 **int 数值型表**性能好。
+2. 查询的表如果压测 最好表id 自增主键 使用int 类型的表压测，上边这个表id 主键是`varchar` 类型，您高并发的情况 **字符串主键的表** 性能相对没有 **int 数值型表**性能好。
 
-## 优化建议
+### 优化建议
 
 建议业务表加一个与业务无关的自增int 类型主键，提高数据库使用性能。
+
