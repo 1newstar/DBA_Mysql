@@ -88,7 +88,7 @@ SELECT
     ' index `',
 	index_name,
     '` (',
-    GROUP_CONCAT(concat('`',column_name,'`')),
+    GROUP_CONCAT(concat('`',column_name,'`') order by SEQ_IN_INDEX),
     ');'
     )
 FROM
@@ -100,7 +100,7 @@ GROUP BY table_schema , table_name , index_type, index_name;
 --检查主键是否一致
 SELECT
 table_schema 库名, table_name 表名, index_name 索引名称, index_type 索引类型,NON_UNIQUE 是否唯一,
-GROUP_CONCAT(column_name) 索引使用的列
+GROUP_CONCAT(column_name order by SEQ_IN_INDEX) 索引使用的列
 FROM
 information_schema.STATISTICS
 where index_name = 'PRIMARY'  and table_schema not in ('mysql','information_schema')
@@ -110,7 +110,7 @@ GROUP BY table_schema , table_name , index_type, index_name,NON_UNIQUE;
 --检查非主键是否一致
 SELECT
 table_schema 库名, table_name 表名, index_name 索引名称, index_type 索引类型,NON_UNIQUE 是否唯一,
-GROUP_CONCAT(column_name) 索引使用的列
+GROUP_CONCAT(column_name  order by SEQ_IN_INDEX) 索引使用的列
 FROM
 information_schema.STATISTICS
 where index_name = 'PRIMARY' and table_schema not in ('mysql','information_schema')
