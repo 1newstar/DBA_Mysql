@@ -15,7 +15,8 @@ mkdir -p /usr/local/mysql/bin
 cd /alidata/install
 
 if [ ! -f mysql-8.0.16-linux-glibc2.12-x86_64.tar.xz ];then
-  wget https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-8.0.16-linux-glibc2.12-x86_64.tar.xz
+#   wget https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-8.0.16-linux-glibc2.12-x86_64.tar.xz
+    wget https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-8.0.20-linux-glibc2.12-x86_64.tar.xz
 fi
 tar -xf mysql-8.0.16-linux-glibc2.12-x86_64.tar.xz
 mv mysql-8.0.16-linux-glibc2.12-x86_64/* /alidata/mysql
