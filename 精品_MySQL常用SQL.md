@@ -339,7 +339,8 @@ WHERE
 SELECT
     table_schema, # 库
     ROUND(SUM(data_length / 1024 / 1024), 2) AS data_length_MB, # 数据空间 单位MB
-    ROUND(SUM(index_length / 1024 / 1024), 2) AS index_length_MB # 索引空间 单位MB
+    ROUND(SUM(index_length / 1024 / 1024), 2) AS index_length_MB, # 索引空间 单位MB
+    ROUND(SUM((data_length + index_length) / 1024 / 1024), 2) AS total_length_MB # 总空间 单位MB
 FROM
     information_schema.tables
 GROUP BY table_schema
@@ -373,7 +374,7 @@ FROM
     FROM
         information_schema.tables
     WHERE
-        table_schema NOT IN ('mysql' , 'performance_schema', 'information_schema', 'sys')
+        table_schema NOT IN ('mysql' , 'performance_schema', 'information_schema', 'sys') and table_type != 'VIEW'
         ) t
         join (
         select sum((data_length + index_length)) as all_length_B from information_schema.tables
