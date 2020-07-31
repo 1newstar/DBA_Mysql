@@ -16,10 +16,11 @@ cd /alidata/install
 if [ `uname -m` == "x86_64" ];then
   rm -rf mysql-5.7.31-linux-glibc2.12-x86_64
   if [ ! -f mysql-5.7.31-linux-glibc2.12-x86_64.tar.gz ];then
-  wget https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.31-linux-glibc2.12-x86_64.tar.gz
-fi
+  	wget https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.31-linux-glibc2.12-x86_64.tar.gz
+  fi
   tar -xzvf mysql-5.7.31-linux-glibc2.12-x86_64.tar.gz
   mv mysql-5.7.31-linux-glibc2.12-x86_64/* /alidata/mysql
+fi
 
 
 #install mysql
