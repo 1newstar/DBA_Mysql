@@ -1,3 +1,10 @@
+# 查看具体cpu 线程占用情况
+ps -mp 2289 -o THREAD,tid,time
+# 找到耗时最高的线程TID，并将其线程ID转换为16进制格式：
+printf "%x\n" tid
+# 打印线程的堆栈信息，thread dump
+jstack pid |grep tid -A 30
+
 ## 元锁
 select * from information_schema.processlist where State='Waiting for table metadata lock';
 select a.count, b.id
@@ -148,7 +155,6 @@ round(sum(index_length/1024/1024),2) as index_length_MB
 from information_schema.tables  
 group by table_schema order by data_length_MB desc,index_length_MB desc;
 
-# Í³¼ÆÄ³¼¸ÕÅ±íµÄ´óÐ¡
 select table_schema,table_name,table_rows,round(data_length/1024/1024,2) as data_length_MB,
 round(index_length/1024/1024,2) as index_length_MB 
 from information_schema.tables  
