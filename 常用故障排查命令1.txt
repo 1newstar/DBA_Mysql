@@ -165,7 +165,7 @@ select concat('kill ',i.trx_mysql_thread_id,';') from information_schema.innodb_
                  information_schema.processlist
              where
                  state = 'Waiting for table metadata lock'
-                     and substring(info, 1, 5) in ('alter' , 'optim', 'repai', 'lock ', 'drop ', 'creat'))) p
+                     and info regexp 'alter|optim|repai|lock|drop|creat')) p
   where timestampdiff(second, i.trx_started, now()) > p.time
   and i.trx_mysql_thread_id  not in (connection_id(),p.id);
 
