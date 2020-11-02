@@ -1,3 +1,32 @@
+## slowlog
+
+SELECT  
+  'slow_query_log' as  parameter, 
+  @@slow_query_log  as  value, '慢查询日志开启状态' as  info
+UNION  
+SELECT  
+  'long_query_time', 
+  @@long_query_time, '慢查询阈值' 
+UNION  
+SELECT  
+  'log_output', 
+  @@log_output, 
+  '慢查询保存方式' 
+UNION  
+SELECT  
+  'slow_query_log_file', 
+  @@slow_query_log_file, '慢查询日志文件' 
+UNION  
+SELECT  
+  'log_queries_not_using_indexes', 
+  @@log_queries_not_using_indexes, 
+  '未使用索引查询是否记录' 
+UNION  
+SELECT  
+  'log_slow_admin_statements', 
+  @@log_slow_admin_statements, 
+  '是否将慢管理语句包含例如analyze';
+
 ## definer
 
 select ROUTINE_SCHEMA,ROUTINE_NAME,DEFINER from routines;
@@ -136,7 +165,7 @@ select concat('kill ',i.trx_mysql_thread_id,';') from information_schema.innodb_
                  information_schema.processlist
              where
                  state = 'Waiting for table metadata lock'
-                     and substring(info, 1, 5) in ('alter' , 'optim', 'repai', 'lock ', 'drop ', 'creat'))) p
+                     and info regexp 'alter|optim|repai|lock|drop|creat')) p
   where timestampdiff(second, i.trx_started, now()) > p.time
   and i.trx_mysql_thread_id  not in (connection_id(),p.id);
 
@@ -446,3 +475,10 @@ AND
 
 # 统计binlog中操作明细
 mysqlbinlog --no-defaults -v --base64-output=DECODE-ROWS mybinlog.000749 |awk '/###/{if($0~/UPDATE|INSERT|DELETE/)count[$2" "$NF]++}END{for(i in count)print i,"\t",count[i]}'|column -t|sort -k3nr|more
+
+
+# MySQL 8.0 
+
+## 行锁
+select * from data_locks;
+select * from data_lock_waits;
